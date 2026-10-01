@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Gallery</title>
+    <title>Live Gallery & Face Search</title>
+    <!-- โหลด face-api.js จาก CDN สำหรับทำ AI สแกนใบหน้า -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.node.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -18,7 +20,7 @@
             text-align: center;
         }
         header {
-            margin-bottom: 28px;
+            margin-bottom: 20px;
         }
         .wedding-badge {
             display: inline-block;
@@ -43,6 +45,37 @@
             font-size: 13px;
             color: #8c7a70;
         }
+
+        /* เมนูสลับโหมด ค้นหาใบหน้า / รูปทั้งหมด */
+        .search-container {
+            margin: 18px auto 12px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn-mode {
+            background-color: #ffffff;
+            border: 1.5px solid #b5838d;
+            color: #b5838d;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-mode.active, .btn-mode:active {
+            background-color: #b5838d;
+            color: #ffffff;
+        }
+        #aiStatus {
+            font-size: 12px;
+            color: #8c7a70;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -149,8 +182,17 @@
         <p>✨ ภาพถ่ายอัปเดตจากกล้องช่างภาพ (แตะที่รูปเพื่อชมและดาวน์โหลด)</p>
     </header>
 
+    <!-- แถบปุ่มค้นหาใบหน้า -->
+    <div class="search-container">
+        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ รูปทั้งหมด</button>
+        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 ค้นหารูปหน้าตัวเอง</button>
+        <input type="file" id="selfieInput" accept="image/*" style="display:none;" onchange="handleSelfieUpload(event)">
+    </div>
+    <div id="aiStatus">🤖 กำลังเตรียมความพร้อมระบบ AI...</div>
+
     <div class="gallery-grid" id="gallery"></div>
 
+    <!-- Modal Popup สำหรับดูและดาวน์โหลดรูป -->
     <div id="photoModal" class="modal" onclick="closeModal(event)">
         <span class="close-btn" onclick="hideModal()">&times;</span>
         <img class="modal-content" id="modalImg" src="" alt="Preview">
@@ -161,18 +203,114 @@
     </div>
 
     <script>
-        // 📌 (ใส่ Google API Key ของคุณในอัญประกาศด้านล่าง)
         const API_KEY = 'AIzaSyD0zv2sEXLM4kzqoG7FhdxaJmrS46DNDb0';
-
-        // 📌 (ใส่ Google Drive Folder ID ของคุณในอัญประกาศด้านล่าง)
         const FOLDER_ID = '1Dt0KzbuWXGiIeQeglfSHLyYYL9BgNoKw';
 
-        async function fetchPhotos() {
-            if (API_KEY.includes('ใส่_GOOGLE_API_KEY')) {
-                document.getElementById('gallery').innerHTML = '<p style="color:#b5838d; grid-column: 1/-1;">กรุณาใส่ Google API Key ในไฟล์ index.html</p>';
+        let userFaceDescriptor = null;
+        let isAiModelLoaded = false;
+
+        // 1. โหลดโมเดล Face Recognition
+        async function loadModels() {
+            const status = document.getElementById('aiStatus');
+            try {
+                status.innerText = "⏳ กำลังโหลดระบบ AI สแกนใบหน้า...";
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                isAiModelLoaded = true;
+                status.innerText = "✨ ระบบ AI พร้อมใช้งาน สามารถค้นหาใบหน้าได้เลย!";
+            } catch (err) {
+                console.error(err);
+                status.innerText = "⚠️ ไม่สามารถโหลดระบบ AI ได้ (ยังดูรูปทั้งหมดได้ตามปกติ)";
+            }
+        }
+
+        // 2. รับรูปถ่ายเซลฟี่จากแขก
+        async function handleSelfieUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!isAiModelLoaded) {
+                alert("ระบบ AI กำลังเตรียมความพร้อมอยู่ กรุณารอสักครู่แล้วกดลองใหม่อีกครั้งครับ");
                 return;
             }
 
+            const status = document.getElementById('aiStatus');
+            status.innerText = "📸 กำลังวิเคราะห์ใบหน้าของคุณ...";
+
+            try {
+                const img = await faceapi.bufferToImage(file);
+                const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+
+                if (!detection) {
+                    alert("ไม่พบใบหน้าชัดเจนในรูปถ่าย กรุณาเลือกหรือถ่ายรูปเซลฟี่ใหม่อีกครั้งครับ");
+                    status.innerText = "❌ ไม่พบใบหน้า กรุณาลองถ่ายรูปใหม่";
+                    return;
+                }
+
+                userFaceDescriptor = detection.descriptor;
+                status.innerText = "🔍 กำลังสแกนค้นหารูปที่มีใบหน้าของคุณ...";
+                
+                document.getElementById('btnAll').classList.remove('active');
+                document.getElementById('btnSearch').classList.add('active');
+
+                await filterGalleryByFace();
+            } catch (err) {
+                console.error(err);
+                alert("เกิดข้อผิดพลาดในการประมวลผลใบหน้า");
+                status.innerText = "✨ ระบบ AI พร้อมใช้งาน";
+            }
+        }
+
+        // 3. สแกนเปรียบเทียบและกรองรูปภาพใน Gallery
+        async function filterGalleryByFace() {
+            const items = document.querySelectorAll('.photo-item');
+            const status = document.getElementById('aiStatus');
+            let matchCount = 0;
+            const threshold = 0.55; // ค่าความแม่นยำ (ยิ่งน้อยยิ่งเข้มงวด)
+
+            for (let item of items) {
+                const img = item.querySelector('img');
+                try {
+                    const detections = await faceapi.detectAllFaces(img).withFaceLandmarks().withFaceDescriptors();
+                    let matched = false;
+
+                    for (let det of detections) {
+                        const distance = faceapi.euclideanDistance(userFaceDescriptor, det.descriptor);
+                        if (distance < threshold) {
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    if (matched) {
+                        item.style.display = 'block';
+                        matchCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                } catch (e) {
+                    console.error("Error matching photo:", e);
+                }
+            }
+
+            status.innerText = `🎯 พบรูปของคุณทั้งหมด ${matchCount} รูป`;
+        }
+
+        // 4. สลับกลับมาแสดงรูปทั้งหมด
+        function showAllPhotos() {
+            userFaceDescriptor = null;
+            document.getElementById('btnAll').classList.add('active');
+            document.getElementById('btnSearch').classList.remove('active');
+            document.getElementById('aiStatus').innerText = "✨ แสดงรูปภาพทั้งหมด";
+
+            const items = document.querySelectorAll('.photo-item');
+            items.forEach(item => item.style.display = 'block');
+        }
+
+        // 5. ดึงข้อมูลรูปภาพจาก Google Drive
+        async function fetchPhotos() {
             const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+trashed=false&orderBy=createdTime+desc&fields=files(id,name)&key=${API_KEY}`;
             
             try {
@@ -181,19 +319,22 @@
                 const gallery = document.getElementById('gallery');
 
                 if (data.files && data.files.length > 0) {
-                    gallery.innerHTML = '';
-                    data.files.forEach(file => {
-                        const item = document.createElement('div');
-                        item.className = 'photo-item';
-                        
-                        const thumbUrl = `https://drive.google.com/thumbnail?id=${file.id}&sz=w800`;
-                        const previewUrl = `https://drive.google.com/thumbnail?id=${file.id}&sz=w1600`;
-                        
-                        item.innerHTML = `
-                            <img src="${thumbUrl}" alt="${file.name}" loading="lazy" onclick="openModal('${previewUrl}', '${file.id}')">
-                        `;
-                        gallery.appendChild(item);
-                    });
+                    // หากไม่ได้อยู่ในโหมดค้นหาด้วยใบหน้า ให้ดึงและอัปเดตรูปตามปกติ
+                    if (!userFaceDescriptor) {
+                        gallery.innerHTML = '';
+                        data.files.forEach(file => {
+                            const item = document.createElement('div');
+                            item.className = 'photo-item';
+                            
+                            const thumbUrl = `https://drive.google.com/thumbnail?id=${file.id}&sz=w800`;
+                            const previewUrl = `https://drive.google.com/thumbnail?id=${file.id}&sz=w1600`;
+                            
+                            item.innerHTML = `
+                                <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${previewUrl}', '${file.id}')">
+                            `;
+                            gallery.appendChild(item);
+                        });
+                    }
                 } else {
                     gallery.innerHTML = '<p style="grid-column: 1/-1; color:#a08d85;">กำลังรอรูปภาพแรกจากกล้องช่างภาพ...</p>';
                 }
@@ -208,8 +349,6 @@
             const downloadBtn = document.getElementById('downloadBtn');
 
             modalImg.src = previewUrl;
-            
-            // เปิดรูปต้นฉบับขนาดเต็มเพื่อรองรับการกดค้าง Save to Photos ลงแอปรูปภาพมือถือ
             const directImageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
             downloadBtn.href = directImageUrl;
             
@@ -224,8 +363,12 @@
             if (event.target.classList.contains('modal')) hideModal();
         }
 
-        fetchPhotos();
-        setInterval(fetchPhotos, 8000);
+        // เริ่มต้นการทำงาน
+        window.addEventListener('DOMContentLoaded', () => {
+            loadModels();
+            fetchPhotos();
+            setInterval(fetchPhotos, 8000);
+        });
     </script>
 </body>
 </html>
