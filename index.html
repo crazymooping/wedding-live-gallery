@@ -186,8 +186,8 @@
     </header>
 
     <div class="search-container">
-        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ รูปทั้งหมด</button>
-        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 ค้นหารูปหน้าตัวเอง</button>
+        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ รอการเพิ่มเติมรูปทั้งหมดในภายหลัง</button>
+        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 รอค้นหารูปหน้าตัวเองในภายหลัง</button>
         <input type="file" id="selfieInput" accept="image/*" style="display:none;" onchange="handleSelfieUpload(event)">
     </div>
     <div id="aiStatus">🤖 กำลังเตรียมความพร้อมระบบ AI...</div>
@@ -238,7 +238,7 @@
             }
 
             const status = document.getElementById('aiStatus');
-            status.innerText = "📸 กำลังวิเคราะห์ใบหน้าของคุณ...";
+            status.innerText = "📸 ขออภัยในความไม่สะดวก โปรดrefresh หน้าต่าง และใช้ในภายหลังที่แก้ไข";
 
             try {
                 const img = await faceapi.bufferToImage(file);
