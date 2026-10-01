@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Gallery & Face Search</title>
-    <!-- โหลด TensorFlow.js และ face-api.js จาก CDN ที่เสถียรสำหรับมือถือ -->
+    <!-- โหลด TensorFlow.js และ face-api.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@3.18.0/dist/tf-core.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@3.18.0/dist/tf-converter.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@3.18.0/dist/tf-backend-webgl.min.js"></script>
@@ -210,7 +210,6 @@
         let userFaceDescriptor = null;
         let isAiModelLoaded = false;
 
-        // โหลดโมเดลจาก GitHub CDN (ใช้ tinyFaceDetector ที่เบาและโหลดเร็วมากบนมือถือ)
         async function loadModels() {
             const status = document.getElementById('aiStatus');
             try {
@@ -243,7 +242,6 @@
 
             try {
                 const img = await faceapi.bufferToImage(file);
-                // ใช้ Tiny Face Detector ในการสแกนบนมือถือ
                 const options = new faceapi.TinyFaceDetectorOptions();
                 const detection = await faceapi.detectSingleFace(img, options).withFaceLandmarks(true).withFaceDescriptor();
 
@@ -328,8 +326,9 @@
                             const item = document.createElement('div');
                             item.className = 'photo-item';
                             
-                            const thumbUrl = `https://drive.google.com/thumbnail?id=${file.id}&sz=w800`;
-                            const previewUrl = `https://drive.google.com/thumbnail?id=${file.id}&sz=w1600`;
+                            // ใช้ CDN lh3.googleusercontent.com เพื่อหลีกเลี่ยงปัญหา CORS
+                            const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s800`;
+                            const previewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
                             
                             item.innerHTML = `
                                 <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${previewUrl}', '${file.id}')">
