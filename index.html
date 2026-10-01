@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Gallery & Face Search</title>
-    <!-- โหลด face-api.js จาก CDN สำหรับทำ AI สแกนใบหน้า -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.node.js"></script>
+    <!-- โหลด TensorFlow.js และ face-api.js จาก CDN ที่เสถียรสำหรับมือถือ -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@3.18.0/dist/tf-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@3.18.0/dist/tf-converter.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@3.18.0/dist/tf-backend-webgl.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -46,7 +50,6 @@
             color: #8c7a70;
         }
 
-        /* เมนูสลับโหมด ค้นหาใบหน้า / รูปทั้งหมด */
         .search-container {
             margin: 18px auto 12px;
             display: flex;
@@ -182,7 +185,6 @@
         <p>✨ ภาพถ่ายอัปเดตจากกล้องช่างภาพ (แตะที่รูปเพื่อชมและดาวน์โหลด)</p>
     </header>
 
-    <!-- แถบปุ่มค้นหาใบหน้า -->
     <div class="search-container">
         <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ รูปทั้งหมด</button>
         <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 ค้นหารูปหน้าตัวเอง</button>
@@ -192,7 +194,6 @@
 
     <div class="gallery-grid" id="gallery"></div>
 
-    <!-- Modal Popup สำหรับดูและดาวน์โหลดรูป -->
     <div id="photoModal" class="modal" onclick="closeModal(event)">
         <span class="close-btn" onclick="hideModal()">&times;</span>
         <img class="modal-content" id="modalImg" src="" alt="Preview">
@@ -209,24 +210,25 @@
         let userFaceDescriptor = null;
         let isAiModelLoaded = false;
 
-        // 1. โหลดโมเดล Face Recognition
+        // โหลดโมเดลจาก GitHub CDN (ใช้ tinyFaceDetector ที่เบาและโหลดเร็วมากบนมือถือ)
         async function loadModels() {
             const status = document.getElementById('aiStatus');
             try {
                 status.innerText = "⏳ กำลังโหลดระบบ AI สแกนใบหน้า...";
-                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
-                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+                
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                
                 isAiModelLoaded = true;
                 status.innerText = "✨ ระบบ AI พร้อมใช้งาน สามารถค้นหาใบหน้าได้เลย!";
             } catch (err) {
                 console.error(err);
-                status.innerText = "⚠️ ไม่สามารถโหลดระบบ AI ได้ (ยังดูรูปทั้งหมดได้ตามปกติ)";
+                status.innerText = "⚠️ ระบบ AI กำลังเตรียมการ (ยังดูรูปทั้งหมดได้ตามปกติ)";
             }
         }
 
-        // 2. รับรูปถ่ายเซลฟี่จากแขก
         async function handleSelfieUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -241,7 +243,9 @@
 
             try {
                 const img = await faceapi.bufferToImage(file);
-                const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+                // ใช้ Tiny Face Detector ในการสแกนบนมือถือ
+                const options = new faceapi.TinyFaceDetectorOptions();
+                const detection = await faceapi.detectSingleFace(img, options).withFaceLandmarks(true).withFaceDescriptor();
 
                 if (!detection) {
                     alert("ไม่พบใบหน้าชัดเจนในรูปถ่าย กรุณาเลือกหรือถ่ายรูปเซลฟี่ใหม่อีกครั้งครับ");
@@ -263,17 +267,18 @@
             }
         }
 
-        // 3. สแกนเปรียบเทียบและกรองรูปภาพใน Gallery
         async function filterGalleryByFace() {
             const items = document.querySelectorAll('.photo-item');
             const status = document.getElementById('aiStatus');
             let matchCount = 0;
-            const threshold = 0.55; // ค่าความแม่นยำ (ยิ่งน้อยยิ่งเข้มงวด)
+            const threshold = 0.6; 
+
+            const options = new faceapi.TinyFaceDetectorOptions();
 
             for (let item of items) {
                 const img = item.querySelector('img');
                 try {
-                    const detections = await faceapi.detectAllFaces(img).withFaceLandmarks().withFaceDescriptors();
+                    const detections = await faceapi.detectAllFaces(img, options).withFaceLandmarks(true).withFaceDescriptors();
                     let matched = false;
 
                     for (let det of detections) {
@@ -298,7 +303,6 @@
             status.innerText = `🎯 พบรูปของคุณทั้งหมด ${matchCount} รูป`;
         }
 
-        // 4. สลับกลับมาแสดงรูปทั้งหมด
         function showAllPhotos() {
             userFaceDescriptor = null;
             document.getElementById('btnAll').classList.add('active');
@@ -309,7 +313,6 @@
             items.forEach(item => item.style.display = 'block');
         }
 
-        // 5. ดึงข้อมูลรูปภาพจาก Google Drive
         async function fetchPhotos() {
             const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+trashed=false&orderBy=createdTime+desc&fields=files(id,name)&key=${API_KEY}`;
             
@@ -319,7 +322,6 @@
                 const gallery = document.getElementById('gallery');
 
                 if (data.files && data.files.length > 0) {
-                    // หากไม่ได้อยู่ในโหมดค้นหาด้วยใบหน้า ให้ดึงและอัปเดตรูปตามปกติ
                     if (!userFaceDescriptor) {
                         gallery.innerHTML = '';
                         data.files.forEach(file => {
@@ -363,7 +365,6 @@
             if (event.target.classList.contains('modal')) hideModal();
         }
 
-        // เริ่มต้นการทำงาน
         window.addEventListener('DOMContentLoaded', () => {
             loadModels();
             fetchPhotos();
