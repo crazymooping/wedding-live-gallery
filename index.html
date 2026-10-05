@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Gallery & Fast Face Search</title>
+    <!-- โหลด TensorFlow.js และ face-api.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@3.18.0/dist/tf-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@3.18.0/dist/tf-converter.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@3.18.0/dist/tf-backend-webgl.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #faf6f0;
+            color: #4a3e3d;
+            padding: 24px 12px;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        .wedding-badge {
+            display: inline-block;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #b5838d;
+            background: #f4e8e1;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            color: #6b4c4c;
+        }
+
+        p {
+            font-size: 13px;
+            color: #8c7a70;
+        }
+
+        .search-container {
+            margin: 18px auto 12px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-mode {
+            background-color: #ffffff;
+            border: 1.5px solid #b5838d;
+            color: #b5838d;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-mode.active,
+        .btn-mode:active {
+            background-color: #b5838d;
+            color: #ffffff;
+        }
+
+        #aiStatus {
+            font-size: 12px;
+            color: #8c7a70;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 600px) {
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 14px;
+            }
+        }
+
+        .photo-item {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            border-radius: 12px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(181, 131, 141, 0.12);
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Modal Popup */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(45, 36, 36, 0.85);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 70vh;
+            border-radius: 12px;
+            object-fit: contain;
+            border: 3px solid #ffffff;
+        }
+
+        .modal-actions {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #e8a598, #b5838d);
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .save-tip {
+            font-size: 11px;
+            color: #f4e8e1;
+            opacity: 0.8;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            color: #ffffff;
+            font-size: 32px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="wedding-badge">LIVE GALLERY</div>
+        <h1>OUR CONGRATE DAY</h1>
+        <p>✨ ภาพถ่ายอัปเดตจากกล้องช่างภาพ (แตะที่รูปเพื่อชมและดาวน์โหลด)</p>
+    </header>
+
+    <div class="search-container">
+        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ รูปทั้งหมด</button>
+        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳
+            ค้นหารูปหน้าตัวเอง</button>
+        <input type="file" id="selfieInput" accept="image/*" style="display:none;" onchange="handleSelfieUpload(event)">
+    </div>
+    <div id="aiStatus">🤖 กำลังเตรียมความพร้อมระบบ AI...</div>
+
+    <div class="gallery-grid" id="gallery"></div>
+
+    <div id="photoModal" class="modal" onclick="closeModal(event)">
+        <span class="close-btn" onclick="hideModal()">&times;</span>
+        <img class="modal-content" id="modalImg" src="" alt="Preview">
+        <div class="modal-actions" onclick="event.stopPropagation()">
+            <a id="downloadBtn" class="download-btn" href="" target="_blank">🌸 บันทึกรูปภาพ</a>
+            <span class="save-tip">💡 กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
+        const FOLDER_ID = '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK';
+
+        let userFaceDescriptor = null;
+        let isAiModelLoaded = false;
+
+        async function loadModels() {
+            const status = document.getElementById('aiStatus');
+            try {
+                status.innerText = "⏳ กำลังโหลดระบบ AI...";
+                const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                isAiModelLoaded = true;
+                status.innerText = "✨ ระบบ AI พร้อมใช้งาน ค้นหาได้ในเสี้ยววินาที!";
+            } catch (err) {
+                status.innerText = "⚠️ ระบบ AI กำลังเตรียมการ";
+            }
+        }
+
+        async function handleSelfieUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !isAiModelLoaded) return;
+
+            const status = document.getElementById('aiStatus');
+            status.innerText = "📸 กำลังวิเคราะห์ใบหน้าของคุณ...";
+
+            try {
+                const img = await faceapi.bufferToImage(file);
+                const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true).withFaceDescriptor();
+
+                if (!detection) {
+                    alert("ไม่พบใบหน้าชัดเจนในรูปถ่าย กรุณาลองถ่ายใหม่อีกครั้งครับ");
+                    status.innerText = "❌ ไม่พบใบหน้า กรุณาลองใหม่";
+                    return;
+                }
+
+                userFaceDescriptor = detection.descriptor;
+                document.getElementById('btnAll').classList.remove('active');
+                document.getElementById('btnSearch').classList.add('active');
+
+                await filterGalleryByFace();
+            } catch (err) {
+                status.innerText = "✨ ระบบ AI พร้อมใช้งาน";
+            }
+        }
+
+        async function filterGalleryByFace() {
+            const status = document.getElementById('aiStatus');
+            status.innerText = "⚡ กำลังสแกนหาใบหน้าของคุณจากฐานข้อมูล...";
+
+            try {
+                const response = await fetch('faces.json');
+                const facesDB = await response.json();
+
+                const threshold = 0.6;
+                const matchedFileIds = new Set();
+
+                for (const [fileId, vectors] of Object.entries(facesDB)) {
+                    for (const vector of vectors) {
+                        const distance = faceapi.euclideanDistance(userFaceDescriptor, vector);
+                        if (distance < threshold) {
+                            matchedFileIds.add(fileId);
+                            break;
+                        }
+                    }
+                }
+
+                const items = document.querySelectorAll('.photo-item');
+                let matchCount = 0;
+
+                items.forEach(item => {
+                    const fileId = item.getAttribute('data-id');
+                    if (matchedFileIds.has(fileId)) {
+                        item.style.display = 'block';
+                        matchCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                status.innerText = `🎯 พบรูปของคุณทั้งหมด ${matchCount} รูป`;
+            } catch (err) {
+                status.innerText = "⚠️ ไม่สามารถอ่านฐานข้อมูลใบหน้าได้";
+            }
+        }
+
+        function showAllPhotos() {
+            userFaceDescriptor = null;
+            document.getElementById('btnAll').classList.add('active');
+            document.getElementById('btnSearch').classList.remove('active');
+            document.getElementById('aiStatus').innerText = "✨ แสดงรูปภาพทั้งหมด";
+            document.querySelectorAll('.photo-item').forEach(item => item.style.display = 'block');
+        }
+
+        async function fetchPhotos() {
+            const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+trashed=false&orderBy=createdTime+desc&fields=files(id,name)&key=${API_KEY}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const gallery = document.getElementById('gallery');
+
+                if (data.files && data.files.length > 0) {
+                    if (!userFaceDescriptor) {
+                        gallery.innerHTML = '';
+                        data.files.forEach(file => {
+                            const item = document.createElement('div');
+                            item.className = 'photo-item';
+                            item.setAttribute('data-id', file.id);
+
+                            const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s800`;
+                            const previewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
+
+                            item.innerHTML = `
+                                <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${previewUrl}', '${file.id}')">
+                            `;
+                            gallery.appendChild(item);
+                        });
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function openModal(previewUrl, fileId) {
+            document.getElementById('modalImg').src = previewUrl;
+            document.getElementById('downloadBtn').href = `https://drive.google.com/uc?export=view&id=${fileId}`;
+            document.getElementById('photoModal').classList.add('active');
+        }
+
+        function hideModal() { document.getElementById('photoModal').classList.remove('active'); }
+        function closeModal(event) { if (event.target.classList.contains('modal')) hideModal(); }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadModels();
+            fetchPhotos();
+            setInterval(fetchPhotos, 8000);
+        });
+    </script>
+</body>
+
+</html>
