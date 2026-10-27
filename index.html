@@ -148,8 +148,10 @@
             border-radius: 12px;
             object-fit: contain;
             border: 3px solid #ffffff;
-            -webkit-user-select: auto; /* อนุญาตให้กดค้างบน iOS */
+            /* อนุญาตการกดค้างบันทึกรูปภาพบน iOS/Android */
+            -webkit-user-select: auto;
             user-select: auto;
+            -webkit-touch-callout: default;
         }
 
         .modal-actions {
@@ -330,9 +332,9 @@
                             item.className = 'photo-item';
                             item.setAttribute('data-id', file.id);
 
-                            // รูปย่อหน้าแกลเลอรี (s600) เพื่อความรวดเร็วในการโหลด
+                            // รูป thumbnail แสดงผลหน้าแรกแบบไวๆ
                             const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s600`;
-                            // รูปใหญ่เต็มความละเอียด (s0) สำหรับแสดงใน Pop-up
+                            // รูปใหญ่เต็ม resolution (s0) สำหรับเปิดใน Modal
                             const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
 
                             item.innerHTML = `
@@ -346,13 +348,25 @@
         }
 
         function openModal(fullUrl, fileId) {
-            document.getElementById('modalImg').src = fullUrl;
-            // ตั้งค่าปุ่มเปิดรูปขนาดเต็มในแท็บใหม่ เพื่อให้กดค้างเซฟง่ายขึ้น
+            const modalImg = document.getElementById('modalImg');
+            
+            // กำหนด src เป็นไฟล์เต็ม
+            modalImg.src = fullUrl;
+            // บังคับให้ browser บนมือถือดึงไฟล์ความละเอียดสูงมาประมวลผลสำหรับ Long-press Save
+            modalImg.srcset = `${fullUrl} 2x`;
+            
+            // ตั้งค่าปุ่มเปิดรูป Original ในแท็บใหม่
             document.getElementById('downloadBtn').href = fullUrl;
             document.getElementById('photoModal').classList.add('active');
         }
 
-        function hideModal() { document.getElementById('photoModal').classList.remove('active'); }
+        function hideModal() { 
+            const modalImg = document.getElementById('modalImg');
+            modalImg.src = '';
+            modalImg.srcset = '';
+            document.getElementById('photoModal').classList.remove('active'); 
+        }
+
         function closeModal(event) { if (event.target.classList.contains('modal')) hideModal(); }
 
         window.addEventListener('DOMContentLoaded', () => {
