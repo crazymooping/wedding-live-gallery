@@ -113,6 +113,7 @@
             box-shadow: 0 4px 12px rgba(181, 131, 141, 0.12);
             cursor: pointer;
             border: 2px solid #ffffff;
+            will-change: transform;
         }
 
         .photo-item img {
@@ -197,14 +198,13 @@
 
     <header>
         <div class="wedding-badge">LIVE GALLERY</div>
-        <h1>PUI & FLOOK</h1>
-        <h2>1/11/26</h2>
+        <h1>1/11/26 PUI & FLOOK</h1>
         <p>✨ ภาพถ่ายอัปเดตจากกล้องช่างภาพ (แตะที่รูปเพื่อชมและดาวน์โหลด)</p>
     </header>
 
     <div class="search-container">
-        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ โปรดรอระบบรูปทั้งหมดในภายหลัง</button>
-        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 โปรดรอระบบค้นหาด้วยรูปเซลฟี่ในภายหลัง</button>
+        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ รูปทั้งหมด</button>
+        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 ค้นหาด้วยรูปเซลฟี่</button>
         <input type="file" id="selfieInput" accept="image/*" style="display:none;" onchange="handleSelfieUpload(event)">
     </div>
     <div id="aiStatus">🤖 กำลังเตรียมความพร้อมระบบ AI...</div>
@@ -226,6 +226,7 @@
 
         let userFaceDescriptor = null;
         let isAiModelLoaded = false;
+        const imageCache = new Map();
 
         async function loadModels() {
             const status = document.getElementById('aiStatus');
@@ -236,9 +237,9 @@
                 await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
                 isAiModelLoaded = true;
-                status.innerText = "✨ โปรดรอระบบ AI พร้อมสำหรับการสแกนใบหน้าในภายหลัง";
+                status.innerText = "✨ ระบบ AI พร้อมสำหรับการสแกนใบหน้า";
             } catch (err) {
-                status.innerText = "⚠️ ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
+                status.innerText = "⚠️ โปรดกด refresh เพื่อให้กลับมาเป็นปกติ";
             }
         }
 
@@ -247,7 +248,7 @@
             if (!file || !isAiModelLoaded) return;
 
             const status = document.getElementById('aiStatus');
-            status.innerText = "⚠️  ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
+            status.innerText = "📸 กำลังวิเคราะห์ใบหน้าของคุณ...";
 
             try {
                 const img = await faceapi.bufferToImage(file);
@@ -265,13 +266,13 @@
 
                 await filterGalleryByFace();
             } catch (err) {
-                status.innerText = "⚠️ ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
+                status.innerText = "✨ ระบบ AI พร้อมใช้งาน";
             }
         }
 
         async function filterGalleryByFace() {
             const status = document.getElementById('aiStatus');
-            status.innerText = "⚠️ ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
+            status.innerText = "⚡ กำลังสแกนหาใบหน้าของคุณจากฐานข้อมูล...";
 
             try {
                 const response = await fetch('faces.json');
@@ -313,11 +314,25 @@
             userFaceDescriptor = null;
             document.getElementById('btnAll').classList.add('active');
             document.getElementById('btnSearch').classList.remove('active');
-            document.getElementById('aiStatus').innerText = "⚠️ ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
+            document.getElementById('aiStatus').innerText = "✨ แสดงรูปภาพทั้งหมด";
             document.querySelectorAll('.photo-item').forEach(item => item.style.display = 'block');
         }
 
+        // Preload รูปความละเอียดสูงล่วงหน้าเมื่อเริ่มแตะที่รูปภาพ
+        function preloadHighRes(fastPreviewUrl, fullUrl) {
+            if (!imageCache.has(fullUrl)) {
+                const img = new Image();
+                img.src = fastPreviewUrl;
+                const fullImg = new Image();
+                fullImg.src = fullUrl;
+                imageCache.set(fullUrl, true);
+            }
+        }
+
         async function fetchPhotos() {
+            // หยุดการดึงรูปชั่วคราวขณะที่เปิด Pop-up ดูรูป เพื่อประหยัด Bandwidth
+            if (document.getElementById('photoModal').classList.contains('active')) return;
+
             const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+trashed=false&orderBy=createdTime+desc&fields=files(id,name)&key=${API_KEY}`;
             try {
                 const response = await fetch(url);
@@ -326,10 +341,7 @@
 
                 if (data.files && data.files.length > 0) {
                     if (!userFaceDescriptor) {
-                        // เก็บ ID รูปปัจจุบันที่มีอยู่บนหน้าจอ
                         const existingIds = new Set([...document.querySelectorAll('.photo-item')].map(item => item.getAttribute('data-id')));
-                        
-                        // สร้าง Fragment เพื่อเพิ่มรูปใหม่เฉพาะรูปที่ยังไม่มี
                         const fragment = document.createDocumentFragment();
                         let hasNewPhoto = false;
 
@@ -340,18 +352,21 @@
                                 item.className = 'photo-item';
                                 item.setAttribute('data-id', file.id);
 
-                                const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s600`;
+                                // ใช้ s400 เพื่อโหลดแกลเลอรีหน้าแรกเร็วขึ้น 2 เท่า
+                                const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s400`;
                                 const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
                                 const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
 
                                 item.innerHTML = `
-                                    <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
+                                    <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" 
+                                         ontouchstart="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
+                                         onmouseenter="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
+                                         onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
                                 `;
                                 fragment.appendChild(item);
                             }
                         });
 
-                        // ถ้ามีรูปถ่ายใหม่สดๆ ร้อนๆ เพิ่มเข้ามา ให้ใส่ไว้ด้านบนสุดทันที
                         if (hasNewPhoto) {
                             gallery.insertBefore(fragment, gallery.firstChild);
                         }
@@ -388,7 +403,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             loadModels();
             fetchPhotos();
-            setInterval(fetchPhotos, 8000);
+            setInterval(fetchPhotos, 6000);
         });
     </script>
 </body>
