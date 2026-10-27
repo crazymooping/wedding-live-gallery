@@ -197,13 +197,14 @@
 
     <header>
         <div class="wedding-badge">LIVE GALLERY</div>
-        <h1>1/11/26 PUI & FLOOK</h1>
+        <h1>PUI & FLOOK</h1>
+        <h2>1/11/26</h2>
         <p>✨ ภาพถ่ายอัปเดตจากกล้องช่างภาพ (แตะที่รูปเพื่อชมและดาวน์โหลด)</p>
     </header>
 
     <div class="search-container">
-        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ รูปทั้งหมด</button>
-        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 ค้นหาด้วยรูปเซลฟี่</button>
+        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ โปรดรอระบบรูปทั้งหมดในภายหลัง</button>
+        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 โปรดรอระบบค้นหาด้วยรูปเซลฟี่ในภายหลัง</button>
         <input type="file" id="selfieInput" accept="image/*" style="display:none;" onchange="handleSelfieUpload(event)">
     </div>
     <div id="aiStatus">🤖 กำลังเตรียมความพร้อมระบบ AI...</div>
@@ -235,9 +236,9 @@
                 await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
                 isAiModelLoaded = true;
-                status.innerText = "✨ ระบบ AI พร้อมสำหรับการสแกนใบหน้า";
+                status.innerText = "✨ โปรดรอระบบ AI พร้อมสำหรับการสแกนใบหน้าในภายหลัง";
             } catch (err) {
-                status.innerText = "⚠️ โปรดกด refresh เพื่อให้กลับมาเป็นปกติ";
+                status.innerText = "⚠️ ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
             }
         }
 
@@ -246,7 +247,7 @@
             if (!file || !isAiModelLoaded) return;
 
             const status = document.getElementById('aiStatus');
-            status.innerText = "📸 กำลังวิเคราะห์ใบหน้าของคุณ...";
+            status.innerText = "⚠️  ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
 
             try {
                 const img = await faceapi.bufferToImage(file);
@@ -264,13 +265,13 @@
 
                 await filterGalleryByFace();
             } catch (err) {
-                status.innerText = "✨ ระบบ AI พร้อมใช้งาน";
+                status.innerText = "⚠️ ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
             }
         }
 
         async function filterGalleryByFace() {
             const status = document.getElementById('aiStatus');
-            status.innerText = "⚡ กำลังสแกนหาใบหน้าของคุณจากฐานข้อมูล...";
+            status.innerText = "⚠️ ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
 
             try {
                 const response = await fetch('faces.json');
@@ -312,7 +313,7 @@
             userFaceDescriptor = null;
             document.getElementById('btnAll').classList.add('active');
             document.getElementById('btnSearch').classList.remove('active');
-            document.getElementById('aiStatus').innerText = "✨ แสดงรูปภาพทั้งหมด";
+            document.getElementById('aiStatus').innerText = "⚠️ ระบบยังไม่พร้อมใช้งาน โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
             document.querySelectorAll('.photo-item').forEach(item => item.style.display = 'block');
         }
 
