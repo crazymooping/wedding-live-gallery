@@ -148,6 +148,8 @@
             border-radius: 12px;
             object-fit: contain;
             border: 3px solid #ffffff;
+            -webkit-user-select: auto; /* อนุญาตให้กดค้างบน iOS */
+            user-select: auto;
         }
 
         .modal-actions {
@@ -166,12 +168,17 @@
             text-decoration: none;
             font-weight: 600;
             font-size: 14px;
+            cursor: pointer;
         }
 
         .save-tip {
-            font-size: 11px;
+            font-size: 12px;
             color: #f4e8e1;
-            opacity: 0.8;
+            opacity: 0.9;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px 14px;
+            border-radius: 15px;
+            margin-top: 4px;
         }
 
         .close-btn {
@@ -194,9 +201,8 @@
     </header>
 
     <div class="search-container">
-        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ รอการอัพเดรตภายหลัง</button>
-        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳
-            รอการอัพเดรตภายหลัง</button>
+        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ รูปทั้งหมด</button>
+        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 ค้นหาด้วยรูปเซลฟี่</button>
         <input type="file" id="selfieInput" accept="image/*" style="display:none;" onchange="handleSelfieUpload(event)">
     </div>
     <div id="aiStatus">🤖 กำลังเตรียมความพร้อมระบบ AI...</div>
@@ -207,7 +213,7 @@
         <span class="close-btn" onclick="hideModal()">&times;</span>
         <img class="modal-content" id="modalImg" src="" alt="Preview">
         <div class="modal-actions" onclick="event.stopPropagation()">
-            <a id="downloadBtn" class="download-btn" href="" target="_blank">🌸 บันทึกรูปภาพ</a>
+            <a id="downloadBtn" class="download-btn" href="" target="_blank">🌸 เปิดรูปขนาดเต็ม (Full HD)</a>
             <span class="save-tip">💡 กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
         </div>
     </div>
@@ -228,7 +234,7 @@
                 await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
                 isAiModelLoaded = true;
-                status.innerText = "✨ รอการอัพเดรตระบบ AI ในภายหลัง";
+                status.innerText = "✨ ระบบ AI พร้อมสำหรับการสแกนใบหน้า";
             } catch (err) {
                 status.innerText = "⚠️ โปรดกด refresh เพื่อให้กลับมาเป็นปกติ";
             }
@@ -324,11 +330,13 @@
                             item.className = 'photo-item';
                             item.setAttribute('data-id', file.id);
 
-                            const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s800`;
-                            const previewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
+                            // รูปย่อหน้าแกลเลอรี (s600) เพื่อความรวดเร็วในการโหลด
+                            const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s600`;
+                            // รูปใหญ่เต็มความละเอียด (s0) สำหรับแสดงใน Pop-up
+                            const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
 
                             item.innerHTML = `
-                                <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${previewUrl}', '${file.id}')">
+                                <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${fullUrl}', '${file.id}')">
                             `;
                             gallery.appendChild(item);
                         });
@@ -337,9 +345,10 @@
             } catch (err) { console.error(err); }
         }
 
-        function openModal(previewUrl, fileId) {
-            document.getElementById('modalImg').src = previewUrl;
-            document.getElementById('downloadBtn').href = `https://drive.google.com/uc?export=view&id=${fileId}`;
+        function openModal(fullUrl, fileId) {
+            document.getElementById('modalImg').src = fullUrl;
+            // ตั้งค่าปุ่มเปิดรูปขนาดเต็มในแท็บใหม่ เพื่อให้กดค้างเซฟง่ายขึ้น
+            document.getElementById('downloadBtn').href = fullUrl;
             document.getElementById('photoModal').classList.add('active');
         }
 
