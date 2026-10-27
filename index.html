@@ -5,11 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Gallery By P'WAT</title>
-    <!-- โหลด TensorFlow.js และ face-api.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@3.18.0/dist/tf-core.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@3.18.0/dist/tf-converter.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl@3.18.0/dist/tf-backend-webgl.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
     <style>
         * {
@@ -54,39 +49,7 @@
         p {
             font-size: 13px;
             color: #8c7a70;
-        }
-
-        .search-container {
-            margin: 18px auto 12px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn-mode {
-            background-color: #ffffff;
-            border: 1.5px solid #b5838d;
-            color: #b5838d;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-mode.active,
-        .btn-mode:active {
-            background-color: #b5838d;
-            color: #ffffff;
-        }
-
-        #aiStatus {
-            font-size: 12px;
-            color: #8c7a70;
-            margin-bottom: 20px;
-            font-weight: 500;
+            margin-bottom: 15px;
         }
 
         .gallery-grid {
@@ -202,13 +165,6 @@
         <p>✨ ภาพถ่ายอัปเดตจากกล้องช่างภาพ (แตะที่รูปเพื่อชมและดาวน์โหลด)</p>
     </header>
 
-    <div class="search-container">
-        <button id="btnAll" class="btn-mode active" onclick="showAllPhotos()">🖼️ โปรดรอระบบรูปทั้งหมดในภายหลัง</button>
-        <button id="btnSearch" class="btn-mode" onclick="document.getElementById('selfieInput').click()">🤳 โปรดรอระบบค้นหาด้วยรูปเซลฟี่ในภายหลัง</button>
-        <input type="file" id="selfieInput" accept="image/*" style="display:none;" onchange="handleSelfieUpload(event)">
-    </div>
-    <div id="aiStatus">🤖 กำลังเตรียมความพร้อมระบบ AI...</div>
-
     <div class="gallery-grid" id="gallery"></div>
 
     <div id="photoModal" class="modal" onclick="closeModal(event)">
@@ -224,99 +180,7 @@
         const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
         const FOLDER_ID = '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK';
 
-        let userFaceDescriptor = null;
-        let isAiModelLoaded = false;
         const imageCache = new Map();
-
-        async function loadModels() {
-            const status = document.getElementById('aiStatus');
-            try {
-                status.innerText = "⏳ กำลังโหลดระบบ AI...";
-                const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-                isAiModelLoaded = true;
-                status.innerText = "✨ โปรดรอระบบ AI พร้อมสำหรับการสแกนใบหน้าในภายหลัง";
-            } catch (err) {
-                status.innerText = "⚠️ โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
-            }
-        }
-
-        async function handleSelfieUpload(event) {
-            const file = event.target.files[0];
-            if (!file || !isAiModelLoaded) return;
-
-            const status = document.getElementById('aiStatus');
-            status.innerText = "⚠️ โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
-
-            try {
-                const img = await faceapi.bufferToImage(file);
-                const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true).withFaceDescriptor();
-
-                if (!detection) {
-                    alert("ไม่พบใบหน้าชัดเจนในรูปถ่าย กรุณาลองถ่ายใหม่อีกครั้งครับ");
-                    status.innerText = "⚠️ โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
-                    return;
-                }
-
-                userFaceDescriptor = detection.descriptor;
-                document.getElementById('btnAll').classList.remove('active');
-                document.getElementById('btnSearch').classList.add('active');
-
-                await filterGalleryByFace();
-            } catch (err) {
-                status.innerText = "⚠️ โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
-            }
-        }
-
-        async function filterGalleryByFace() {
-            const status = document.getElementById('aiStatus');
-            status.innerText = "⚡ กำลังสแกนหาใบหน้าของคุณจากฐานข้อมูล...";
-
-            try {
-                const response = await fetch('faces.json');
-                const facesDB = await response.json();
-
-                const threshold = 0.6;
-                const matchedFileIds = new Set();
-
-                for (const [fileId, vectors] of Object.entries(facesDB)) {
-                    for (const vector of vectors) {
-                        const distance = faceapi.euclideanDistance(userFaceDescriptor, vector);
-                        if (distance < threshold) {
-                            matchedFileIds.add(fileId);
-                            break;
-                        }
-                    }
-                }
-
-                const items = document.querySelectorAll('.photo-item');
-                let matchCount = 0;
-
-                items.forEach(item => {
-                    const fileId = item.getAttribute('data-id');
-                    if (matchedFileIds.has(fileId)) {
-                        item.style.display = 'block';
-                        matchCount++;
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
-
-                status.innerText = `🎯 พบรูปของคุณทั้งหมด ${matchCount} รูป`;
-            } catch (err) {
-                status.innerText = "⚠️ ไม่สามารถอ่านฐานข้อมูลใบหน้าได้";
-            }
-        }
-
-        function showAllPhotos() {
-            userFaceDescriptor = null;
-            document.getElementById('btnAll').classList.add('active');
-            document.getElementById('btnSearch').classList.remove('active');
-            document.getElementById('aiStatus').innerText = "⚠️ โปรดกด refresh เพื่อให้เริ่มการทำงานใหม่";
-            document.querySelectorAll('.photo-item').forEach(item => item.style.display = 'block');
-        }
 
         // Preload รูปความละเอียดสูงล่วงหน้าเมื่อเริ่มแตะที่รูปภาพ
         function preloadHighRes(fastPreviewUrl, fullUrl) {
@@ -327,6 +191,11 @@
                 fullImg.src = fullUrl;
                 imageCache.set(fullUrl, true);
             }
+        }
+
+        // ฟังก์ชันคลีนชื่อไฟล์เพื่อดักจับรูปซ้ำกรณีชื่อมี (1), _copy เป็นต้น
+        function getBaseFileName(name) {
+            return name.replace(/\s*\(\d+\)\s*/g, '').replace(/_copy\d*/gi, '').toLowerCase();
         }
 
         async function fetchPhotos() {
@@ -340,39 +209,41 @@
                 const gallery = document.getElementById('gallery');
 
                 if (data.files && data.files.length > 0) {
-                    if (!userFaceDescriptor) {
-                        // เช็กทั้ง ID และ ชื่อไฟล์ เพื่อดักภาพซ้ำ 100%
-                        const existingIds = new Set([...document.querySelectorAll('.photo-item')].map(item => item.getAttribute('data-id')));
-                        const existingNames = new Set([...document.querySelectorAll('.photo-item img')].map(img => img.getAttribute('alt')));
-                        
-                        const fragment = document.createDocumentFragment();
-                        let hasNewPhoto = false;
+                    const existingIds = new Set([...document.querySelectorAll('.photo-item')].map(item => item.getAttribute('data-id')));
+                    const existingNames = new Set([...document.querySelectorAll('.photo-item img')].map(img => img.getAttribute('data-clean-name')));
 
-                        data.files.forEach(file => {
-                            if (!existingIds.has(file.id) && !existingNames.has(file.name)) {
-                                hasNewPhoto = true;
-                                const item = document.createElement('div');
-                                item.className = 'photo-item';
-                                item.setAttribute('data-id', file.id);
+                    const fragment = document.createDocumentFragment();
+                    let hasNewPhoto = false;
 
-                                // ใช้ s400 เพื่อโหลดแกลเลอรีหน้าแรกเร็วขึ้น 2 เท่า
-                                const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s400`;
-                                const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
-                                const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
+                    data.files.forEach(file => {
+                        const cleanName = getBaseFileName(file.name);
 
-                                item.innerHTML = `
-                                    <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" 
-                                         ontouchstart="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
-                                         onmouseenter="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
-                                         onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
-                                `;
-                                fragment.appendChild(item);
-                            }
-                        });
+                        // กรองไม่ให้เพิ่มทั้ง File ID ซ้ำ และ Clean Name ซ้ำ
+                        if (!existingIds.has(file.id) && !existingNames.has(cleanName)) {
+                            hasNewPhoto = true;
+                            existingIds.add(file.id);
+                            existingNames.add(cleanName);
 
-                        if (hasNewPhoto) {
-                            gallery.insertBefore(fragment, gallery.firstChild);
+                            const item = document.createElement('div');
+                            item.className = 'photo-item';
+                            item.setAttribute('data-id', file.id);
+
+                            const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s400`;
+                            const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
+                            const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
+
+                            item.innerHTML = `
+                                <img src="${thumbUrl}" alt="${file.name}" data-clean-name="${cleanName}" crossorigin="anonymous" loading="lazy" 
+                                     ontouchstart="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
+                                     onmouseenter="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
+                                     onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
+                            `;
+                            fragment.appendChild(item);
                         }
+                    });
+
+                    if (hasNewPhoto) {
+                        gallery.insertBefore(fragment, gallery.firstChild);
                     }
                 }
             } catch (err) { console.error(err); }
@@ -404,7 +275,6 @@
         function closeModal(event) { if (event.target.classList.contains('modal')) hideModal(); }
 
         window.addEventListener('DOMContentLoaded', () => {
-            loadModels();
             fetchPhotos();
             setInterval(fetchPhotos, 6000);
         });
