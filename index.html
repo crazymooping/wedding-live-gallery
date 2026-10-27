@@ -228,9 +228,9 @@
                 await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL);
                 await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
                 isAiModelLoaded = true;
-                status.innerText = "✨ ระบบ AI พร้อมใช้งาน ค้นหาได้ในเสี้ยววินาที!";
+                status.innerText = "✨ รอการอัพเดรตระบบ AI ในภายหลัง";
             } catch (err) {
-                status.innerText = "⚠️ ระบบ AI กำลังเตรียมการ";
+                status.innerText = "⚠️ โปรดกด refresh เพื่อให้กลับมาเป็นปกติ";
             }
         }
 
