@@ -151,7 +151,6 @@
             -webkit-user-select: auto;
             user-select: auto;
             -webkit-touch-callout: default;
-            transition: opacity 0.2s ease-in-out;
         }
 
         .modal-actions {
@@ -332,11 +331,11 @@
                             item.className = 'photo-item';
                             item.setAttribute('data-id', file.id);
 
-                            // รูป thumbnail แสดงผลหน้าแรกแบบเร็วที่สุด
+                            // รูป thumbnail แสดงผลหน้าแรกแบบไวๆ
                             const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s600`;
-                            // รูปพรีวิวความไวสูงสำหรับขึ้นจอ Pop-up ทันที
+                            // รูปพรีวิวความไวสูง
                             const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
-                            // รูปใหญ่เต็ม resolution (s0) สำหรับดาวน์โหลด/กดค้างเซฟ
+                            // รูปใหญ่เต็ม resolution (s0)
                             const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
 
                             item.innerHTML = `
@@ -352,18 +351,19 @@
         function openModal(fastPreviewUrl, fullUrl, fileId) {
             const modalImg = document.getElementById('modalImg');
             
-            // 1. แสดงภาพพรีวิวความเร็วสูงขึ้นจอก่อนทันที ไม่ต้องรอ
+            // 1. ใส่ภาพพรีวิว s1600 เป็นพื้นหลังฉุกเฉิน
             modalImg.src = fastPreviewUrl;
+            // 2. บังคับล็อกให้เบราว์เซอร์รับรู้ว่ารูปนี้ต้องเซฟเป็นไฟล์เต็ม s0
+            modalImg.srcset = `${fullUrl} 1x`;
+            
             document.getElementById('downloadBtn').href = fullUrl;
             document.getElementById('photoModal').classList.add('active');
 
-            // 2. แอบโหลดรูปไฟล์เต็มความละเอียดสูง (s0) ตามหลังในฉากหลังอย่างเนียนๆ
-            const highResImg = new Image();
-            highResImg.src = fullUrl;
-            highResImg.onload = () => {
-                // พอดาวน์โหลดไฟล์เต็มเสร็จ สลับเปลี่ยนเพื่อรองรับ Long-press Save ทันที
+            // 3. เปลี่ยน src เป็น s0 ทันทีเมื่อดาวน์โหลดไฟล์เต็มสำเร็จ
+            const fullImg = new Image();
+            fullImg.src = fullUrl;
+            fullImg.onload = () => {
                 modalImg.src = fullUrl;
-                modalImg.srcset = `${fullUrl} 2x`;
             };
         }
 
