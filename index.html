@@ -325,24 +325,35 @@
 
                 if (data.files && data.files.length > 0) {
                     if (!userFaceDescriptor) {
-                        gallery.innerHTML = '';
+                        // เก็บ ID รูปปัจจุบันที่มีอยู่บนหน้าจอ
+                        const existingIds = new Set([...document.querySelectorAll('.photo-item')].map(item => item.getAttribute('data-id')));
+                        
+                        // สร้าง Fragment เพื่อเพิ่มรูปใหม่เฉพาะรูปที่ยังไม่มี
+                        const fragment = document.createDocumentFragment();
+                        let hasNewPhoto = false;
+
                         data.files.forEach(file => {
-                            const item = document.createElement('div');
-                            item.className = 'photo-item';
-                            item.setAttribute('data-id', file.id);
+                            if (!existingIds.has(file.id)) {
+                                hasNewPhoto = true;
+                                const item = document.createElement('div');
+                                item.className = 'photo-item';
+                                item.setAttribute('data-id', file.id);
 
-                            // รูป thumbnail แสดงผลหน้าแรกแบบไวๆ
-                            const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s600`;
-                            // รูปพรีวิวความไวสูง
-                            const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
-                            // รูปใหญ่เต็ม resolution (s0)
-                            const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
+                                const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s600`;
+                                const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
+                                const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
 
-                            item.innerHTML = `
-                                <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
-                            `;
-                            gallery.appendChild(item);
+                                item.innerHTML = `
+                                    <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
+                                `;
+                                fragment.appendChild(item);
+                            }
                         });
+
+                        // ถ้ามีรูปถ่ายใหม่สดๆ ร้อนๆ เพิ่มเข้ามา ให้ใส่ไว้ด้านบนสุดทันที
+                        if (hasNewPhoto) {
+                            gallery.insertBefore(fragment, gallery.firstChild);
+                        }
                     }
                 }
             } catch (err) { console.error(err); }
@@ -351,15 +362,12 @@
         function openModal(fastPreviewUrl, fullUrl, fileId) {
             const modalImg = document.getElementById('modalImg');
             
-            // 1. ใส่ภาพพรีวิว s1600 เป็นพื้นหลังฉุกเฉิน
             modalImg.src = fastPreviewUrl;
-            // 2. บังคับล็อกให้เบราว์เซอร์รับรู้ว่ารูปนี้ต้องเซฟเป็นไฟล์เต็ม s0
             modalImg.srcset = `${fullUrl} 1x`;
             
             document.getElementById('downloadBtn').href = fullUrl;
             document.getElementById('photoModal').classList.add('active');
 
-            // 3. เปลี่ยน src เป็น s0 ทันทีเมื่อดาวน์โหลดไฟล์เต็มสำเร็จ
             const fullImg = new Image();
             fullImg.src = fullUrl;
             fullImg.onload = () => {
