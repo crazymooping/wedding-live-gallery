@@ -148,10 +148,10 @@
             border-radius: 12px;
             object-fit: contain;
             border: 3px solid #ffffff;
-            /* อนุญาตการกดค้างบันทึกรูปภาพบน iOS/Android */
             -webkit-user-select: auto;
             user-select: auto;
             -webkit-touch-callout: default;
+            transition: opacity 0.2s ease-in-out;
         }
 
         .modal-actions {
@@ -332,13 +332,15 @@
                             item.className = 'photo-item';
                             item.setAttribute('data-id', file.id);
 
-                            // รูป thumbnail แสดงผลหน้าแรกแบบไวๆ
+                            // รูป thumbnail แสดงผลหน้าแรกแบบเร็วที่สุด
                             const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s600`;
-                            // รูปใหญ่เต็ม resolution (s0) สำหรับเปิดใน Modal
+                            // รูปพรีวิวความไวสูงสำหรับขึ้นจอ Pop-up ทันที
+                            const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
+                            // รูปใหญ่เต็ม resolution (s0) สำหรับดาวน์โหลด/กดค้างเซฟ
                             const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
 
                             item.innerHTML = `
-                                <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${fullUrl}', '${file.id}')">
+                                <img src="${thumbUrl}" alt="${file.name}" crossorigin="anonymous" loading="lazy" onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
                             `;
                             gallery.appendChild(item);
                         });
@@ -347,17 +349,22 @@
             } catch (err) { console.error(err); }
         }
 
-        function openModal(fullUrl, fileId) {
+        function openModal(fastPreviewUrl, fullUrl, fileId) {
             const modalImg = document.getElementById('modalImg');
             
-            // กำหนด src เป็นไฟล์เต็ม
-            modalImg.src = fullUrl;
-            // บังคับให้ browser บนมือถือดึงไฟล์ความละเอียดสูงมาประมวลผลสำหรับ Long-press Save
-            modalImg.srcset = `${fullUrl} 2x`;
-            
-            // ตั้งค่าปุ่มเปิดรูป Original ในแท็บใหม่
+            // 1. แสดงภาพพรีวิวความเร็วสูงขึ้นจอก่อนทันที ไม่ต้องรอ
+            modalImg.src = fastPreviewUrl;
             document.getElementById('downloadBtn').href = fullUrl;
             document.getElementById('photoModal').classList.add('active');
+
+            // 2. แอบโหลดรูปไฟล์เต็มความละเอียดสูง (s0) ตามหลังในฉากหลังอย่างเนียนๆ
+            const highResImg = new Image();
+            highResImg.src = fullUrl;
+            highResImg.onload = () => {
+                // พอดาวน์โหลดไฟล์เต็มเสร็จ สลับเปลี่ยนเพื่อรองรับ Long-press Save ทันที
+                modalImg.src = fullUrl;
+                modalImg.srcset = `${fullUrl} 2x`;
+            };
         }
 
         function hideModal() { 
