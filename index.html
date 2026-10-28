@@ -17,6 +17,7 @@
             --text-muted: #8C7A70;
             --champagne-gold: #B89B6A;
             --gold-light: rgba(184, 155, 106, 0.25);
+            --heart-red: #E74C3C;
         }
 
         * {
@@ -46,7 +47,7 @@
             background-color: rgba(250, 247, 242, 0.96);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            padding: 16px 12px 8px;
+            padding: 14px 12px 8px;
             text-align: center;
             border-bottom: 1px solid rgba(184, 155, 106, 0.15);
         }
@@ -81,7 +82,7 @@
 
         h1.couple-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(30px, 4.5vw, 52px);
+            font-size: clamp(28px, 4.2vw, 48px);
             font-weight: 400;
             letter-spacing: 6px;
             line-height: 1.05;
@@ -91,10 +92,10 @@
 
         .event-date {
             font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(12px, 1.6vw, 17px);
+            font-size: clamp(11px, 1.5vw, 16px);
             letter-spacing: 5px;
             color: var(--champagne-gold);
-            margin-top: 4px;
+            margin-top: 3px;
             font-weight: 400;
         }
 
@@ -102,13 +103,43 @@
             width: clamp(35px, 5vw, 70px);
             height: 1px;
             background: linear-gradient(90deg, transparent, var(--champagne-gold), transparent);
-            margin: 8px auto 0;
+            margin: 6px auto;
+        }
+
+        /* ปุ่มสลับโหมดรูปภาพทั้งหมด / รูปที่ถูกใจ */
+        .filter-container {
+            margin-top: 6px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--champagne-gold);
+            color: var(--text-main);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-family: 'Noto Serif Thai', serif;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-btn.active {
+            background: var(--champagne-gold);
+            color: #FAF7F2;
+            font-weight: 400;
+            box-shadow: 0 2px 8px rgba(184, 155, 106, 0.3);
         }
 
         .scroll-hint {
-            font-size: clamp(9.5px, 1.1vw, 12px);
+            font-size: clamp(9px, 1vw, 11px);
             color: var(--text-muted);
-            margin-top: 6px;
+            margin-top: 4px;
             font-weight: 300;
             letter-spacing: 0.5px;
         }
@@ -122,14 +153,15 @@
             padding: 8px 0;
             overflow: hidden;
             width: 100%;
+            position: relative;
         }
 
         /* Grid รูปภาพ */
         .gallery-grid {
             display: grid;
-            grid-template-rows: repeat(2, calc((100dvh - 245px) / 2));
+            grid-template-rows: repeat(2, calc((100dvh - 280px) / 2));
             grid-auto-flow: column;
-            grid-auto-columns: calc((100dvh - 245px) / 2);
+            grid-auto-columns: calc((100dvh - 280px) / 2);
             gap: 10px;
             overflow-x: auto;
             overflow-y: hidden;
@@ -145,10 +177,10 @@
         }
 
         @media (min-width: 768px) {
-            header { padding: 18px 16px 10px; }
+            header { padding: 16px 16px 8px; }
             .gallery-grid {
-                grid-template-rows: repeat(2, calc((100dvh - 300px) / 2));
-                grid-auto-columns: calc((100dvh - 300px) / 2);
+                grid-template-rows: repeat(2, calc((100dvh - 330px) / 2));
+                grid-auto-columns: calc((100dvh - 330px) / 2);
                 gap: 14px;
                 padding: 0 28px;
             }
@@ -178,6 +210,11 @@
             will-change: transform;
         }
 
+        /* เมื่อถูกซ่อนในโหมดแสดงเฉพาะที่กดใจ */
+        .photo-item.hidden {
+            display: none !important;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
@@ -200,6 +237,37 @@
             transform: scale(1.05);
         }
 
+        /* ปุ่มกดหัวใจมุมขวาบนการ์ด */
+        .like-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(24, 18, 16, 0.45);
+            border: none;
+            color: #FAF7F2;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transition: all 0.25s ease;
+            z-index: 10;
+            font-size: 13px;
+        }
+
+        .like-btn:active {
+            transform: scale(1.2);
+        }
+
+        .like-btn.liked {
+            background: rgba(231, 76, 60, 0.85);
+            color: #FFFFFF;
+        }
+
         .time-badge {
             position: absolute;
             bottom: 6px;
@@ -217,7 +285,18 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
-        /* Footer ส่วนล่างสุด - ขยายขนาดตัวหนังสือให้เด่นและใหญ่ขึ้น */
+        /* ข้อความแจ้งเตือนเมื่อยังไม่ได้กดใจรูปใดๆ */
+        .empty-state {
+            display: none;
+            position: absolute;
+            color: var(--text-muted);
+            font-size: 13px;
+            text-align: center;
+            font-weight: 300;
+            pointer-events: none;
+        }
+
+        /* Footer ส่วนล่างสุด */
         footer {
             flex-shrink: 0;
             text-align: center;
@@ -227,7 +306,7 @@
         .thank-you-msg {
             font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-size: clamp(16px, 2.4vw, 24px); /* ขยายขนาดตัวหนังสือใหญ่ขึ่นสวยงาม */
+            font-size: clamp(16px, 2.4vw, 24px);
             letter-spacing: 2px;
             color: var(--champagne-gold);
             font-weight: 500;
@@ -335,11 +414,19 @@
         <h1 class="couple-title">Pui & Flook</h1>
         <div class="event-date">01 · 11 · 2026</div>
         <div class="gold-divider"></div>
+        
+        <!-- ปุ่มสลับโหมดแสดงผล -->
+        <div class="filter-container">
+            <button class="filter-btn active" id="btnAll" onclick="setFilter('all')">📷 แสดงทั้งหมด</button>
+            <button class="filter-btn" id="btnFavorites" onclick="setFilter('favorites')">❤️ รูปที่ถูกใจ (<span id="favCount">0</span>)</button>
+        </div>
+        
         <div class="scroll-hint">👈 เลื่อนซ้าย-ขวาเพื่อชมรูปภาพ 👉</div>
     </header>
 
     <div class="gallery-container">
         <div class="gallery-grid" id="gallery"></div>
+        <div class="empty-state" id="emptyState">คุณยังไม่ได้กดใจรูปภาพใดๆ 🤍</div>
     </div>
 
     <footer>
@@ -367,6 +454,81 @@
         const FOLDER_ID = '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK';
 
         const imageCache = new Map();
+        let currentFilter = 'all'; // 'all' หรือ 'favorites'
+
+        // ดึงข้อมูลรูปที่ถูกใจจาก LocalStorage ในเครื่อง
+        function getFavorites() {
+            try {
+                return new Set(JSON.parse(localStorage.getItem('pui_flook_favs') || '[]'));
+            } catch (e) {
+                return new Set();
+            }
+        }
+
+        // บันทึกรูปที่ถูกใจลง LocalStorage ในเครื่อง
+        function saveFavorites(favSet) {
+            localStorage.setItem('pui_flook_favs', JSON.stringify([...favSet]));
+            updateFavCount();
+        }
+
+        function updateFavCount() {
+            const favs = getFavorites();
+            document.getElementById('favCount').textContent = favs.size;
+        }
+
+        function toggleLike(event, fileId) {
+            event.stopPropagation(); // ป้องกันไม่ให้เปิด Modal
+            const favs = getFavorites();
+            const btn = event.currentTarget;
+
+            if (favs.has(fileId)) {
+                favs.delete(fileId);
+                btn.classList.remove('liked');
+                btn.innerHTML = '🤍';
+            } else {
+                favs.add(fileId);
+                btn.classList.add('liked');
+                btn.innerHTML = '❤️';
+            }
+
+            saveFavorites(favs);
+            applyFilter();
+        }
+
+        function setFilter(filterMode) {
+            currentFilter = filterMode;
+            document.getElementById('btnAll').classList.toggle('active', filterMode === 'all');
+            document.getElementById('btnFavorites').classList.toggle('active', filterMode === 'favorites');
+            applyFilter();
+        }
+
+        function applyFilter() {
+            const favs = getFavorites();
+            const items = document.querySelectorAll('.photo-item');
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                const id = item.getAttribute('data-id');
+                if (currentFilter === 'all') {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    if (favs.has(id)) {
+                        item.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                }
+            });
+
+            const emptyState = document.getElementById('emptyState');
+            if (currentFilter === 'favorites' && visibleCount === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+            }
+        }
 
         function formatTime(isoString) {
             if (!isoString) return '';
@@ -398,6 +560,7 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 const gallery = document.getElementById('gallery');
+                const favs = getFavorites();
 
                 if (data.files && data.files.length > 0) {
                     const existingIds = new Set([...document.querySelectorAll('.photo-item')].map(item => item.getAttribute('data-id')));
@@ -422,8 +585,12 @@
                             const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
                             const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
                             const timeText = formatTime(file.createdTime);
+                            const isLiked = favs.has(file.id);
 
                             item.innerHTML = `
+                                <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(event, '${file.id}')">
+                                    ${isLiked ? '❤️' : '🤍'}
+                                </button>
                                 <img src="${thumbUrl}" alt="${file.name}" data-clean-name="${cleanName}" crossorigin="anonymous" loading="lazy" 
                                      ontouchstart="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
                                      onmouseenter="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
@@ -436,6 +603,7 @@
 
                     if (hasNewPhoto) {
                         gallery.insertBefore(fragment, gallery.firstChild);
+                        applyFilter();
                     }
                 }
             } catch (err) { console.error(err); }
@@ -467,6 +635,7 @@
         function closeModal(event) { if (event.target.classList.contains('modal')) hideModal(); }
 
         window.addEventListener('DOMContentLoaded', () => {
+            updateFavCount();
             fetchPhotos();
             setInterval(fetchPhotos, 6000);
         });
