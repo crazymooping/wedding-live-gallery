@@ -8,7 +8,7 @@
     <!-- โหลด Google Fonts: Cormorant Garamond & Noto Serif Thai -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Serif+Thai:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Noto+Serif+Thai:wght@300;400&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -25,22 +25,25 @@
             padding: 0;
         }
 
-        body {
-            font-family: 'Noto Serif Thai', -apple-system, serif;
+        /* ล็อคไม่ให้หน้าเว็บเลื่อนขึ้นลง 100% บนทุกอุปกรณ์ */
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh; /* ป้องกันแถบ Safari/Chrome บนมือถือดันจอ */
+            overflow: hidden;
             background-color: var(--bg-color);
             color: var(--text-main);
-            min-height: 100vh;
+            font-family: 'Noto Serif Thai', -apple-system, serif;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
+            position: fixed; /* ป้องกัน Page Drag / Bounce Scroll บน iOS */
+            touch-action: pan-x; /* อนุญาตให้ใช้นิ้วปัดได้เฉพาะแนวแกน X (ซ้าย-ขวา) */
         }
 
-        /* ตรึง Header อยู่ด้านบนเสมอ */
+        /* Header ส่วนหัวปรับขนาดสมส่วนหรูหรา */
         header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background-color: rgba(250, 247, 242, 0.94);
+            flex-shrink: 0;
+            background-color: rgba(250, 247, 242, 0.96);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             padding: 16px 12px 10px;
@@ -51,10 +54,10 @@
         .live-badge {
             display: inline-block;
             font-size: 10px;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
             text-transform: uppercase;
             color: var(--champagne-gold);
-            font-weight: 400;
+            font-weight: 500;
             margin-bottom: 4px;
             line-height: 1;
         }
@@ -78,88 +81,83 @@
 
         h1.couple-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 24px;
-            font-weight: 300;
-            letter-spacing: 4px;
-            line-height: 1.1;
+            font-size: clamp(32px, 5vw, 56px); /* ปรับขนาดตัวหนังสืออัตโนมัติตามขนาดจอ */
+            font-weight: 400;
+            letter-spacing: 6px;
+            line-height: 1.05;
             color: var(--text-main);
             text-transform: uppercase;
         }
 
         .event-date {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 11px;
-            letter-spacing: 4px;
+            font-size: clamp(12px, 1.8vw, 18px);
+            letter-spacing: 5px;
             color: var(--champagne-gold);
             margin-top: 4px;
             font-weight: 400;
         }
 
         .gold-divider {
-            width: 35px;
+            width: clamp(40px, 6vw, 80px);
             height: 1px;
             background: linear-gradient(90deg, transparent, var(--champagne-gold), transparent);
             margin: 8px auto 0;
         }
 
         .scroll-hint {
-            font-size: 10px;
+            font-size: clamp(10px, 1.2vw, 13px);
             color: var(--text-muted);
-            margin-top: 8px;
+            margin-top: 6px;
             font-weight: 300;
             letter-spacing: 0.5px;
         }
 
-        /* Responsive Container */
+        /* Container การ์ดรูปภาพ ดึงขึ้นมาชิด Header พอดีเป๊ะ */
         .gallery-container {
             flex: 1;
             display: flex;
             align-items: center;
-            padding: 14px 0 24px;
+            justify-content: center;
+            padding: 12px 0 20px;
+            overflow: hidden;
+            width: 100%;
         }
 
-        /* 1. สเกลสำหรับโทรศัพท์มือถือ (Mobile: < 600px) */
+        /* การ์ดรูปภาพสไลด์ซ้าย-ขวา คำนวณความสูงแบบคำนวณพื้นที่จริง */
         .gallery-grid {
             display: grid;
-            grid-template-rows: repeat(2, min(36vw, 140px));
+            /* มือถือ: ปรับขนาดการ์ดรูปภาพให้มีขนาดพอดี ไม่ใหญ่และไม่ล้นจอ */
+            grid-template-rows: repeat(2, calc((100dvh - 180px) / 2));
             grid-auto-flow: column;
-            grid-auto-columns: min(36vw, 140px);
-            gap: 10px;
+            grid-auto-columns: calc((100dvh - 180px) / 2);
+            gap: 12px;
             overflow-x: auto;
             overflow-y: hidden;
-            padding: 0 16px;
+            padding: 0 20px;
             width: 100%;
+            height: 100%;
+            align-content: center;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
             scrollbar-color: var(--champagne-gold) transparent;
+            touch-action: pan-x;
         }
 
-        /* 2. สเกลสำหรับแท็บเล็ต (Tablet: 600px - 899px) */
-        @media (min-width: 600px) {
-            h1.couple-title { font-size: 32px; }
-            .event-date { font-size: 12px; }
+        /* คอมพิวเตอร์ / iPad จอใหญ่: เพิ่มพื้นที่รูปภาพให้ใหญ่ขนานไปกับชื่องาน */
+        @media (min-width: 768px) {
+            header { padding: 20px 16px 12px; }
             .gallery-grid {
-                grid-template-rows: repeat(2, 165px);
-                grid-auto-columns: 165px;
-                gap: 14px;
-                padding: 0 20px;
-            }
-        }
-
-        /* 3. สเกลสำหรับคอมพิวเตอร์ (Desktop: >= 900px) */
-        @media (min-width: 900px) {
-            h1.couple-title { font-size: 36px; }
-            .gallery-grid {
-                grid-template-rows: repeat(2, 185px);
-                grid-auto-columns: 185px;
+                grid-template-rows: repeat(2, calc((100dvh - 240px) / 2));
+                grid-auto-columns: calc((100dvh - 240px) / 2);
                 gap: 16px;
-                padding: 0 24px;
+                padding: 0 32px;
             }
         }
 
         .gallery-grid::-webkit-scrollbar {
-            height: 4px;
+            height: 5px;
         }
         .gallery-grid::-webkit-scrollbar-thumb {
             background: var(--champagne-gold);
@@ -175,7 +173,7 @@
             background-color: #EFECE6;
             cursor: pointer;
             border: 1px solid var(--gold-light);
-            box-shadow: 0 4px 12px rgba(62, 47, 43, 0.04);
+            box-shadow: 0 4px 14px rgba(62, 47, 43, 0.05);
             transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
             animation: fadeIn 0.5s ease forward;
             scroll-snap-align: start;
@@ -190,7 +188,7 @@
         .photo-item:hover, .photo-item:active {
             transform: scale(0.98);
             border-color: var(--champagne-gold);
-            box-shadow: 0 6px 16px rgba(184, 155, 106, 0.2);
+            box-shadow: 0 6px 18px rgba(184, 155, 106, 0.2);
         }
 
         .photo-item img {
@@ -206,13 +204,13 @@
 
         .time-badge {
             position: absolute;
-            bottom: 5px;
-            left: 5px;
-            background: rgba(24, 18, 16, 0.65);
+            bottom: 6px;
+            left: 6px;
+            background: rgba(24, 18, 16, 0.68);
             color: #FAF7F2;
-            font-size: 8.5px;
+            font-size: clamp(8px, 1vw, 10px);
             font-weight: 300;
-            padding: 2px 5px;
+            padding: 2px 6px;
             border-radius: 3px;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
@@ -238,6 +236,7 @@
             padding: 24px;
             opacity: 0;
             transition: opacity 0.35s ease;
+            touch-action: auto;
         }
 
         .modal.active {
@@ -383,7 +382,7 @@
 
                 if (data.files && data.files.length > 0) {
                     const existingIds = new Set([...document.querySelectorAll('.photo-item')].map(item => item.getAttribute('data-id')));
-                    const existingNames = new Set([...document.querySelectorAll('.photo-item img')].map(img => item.getAttribute('data-clean-name')));
+                    const existingNames = new Set([...document.querySelectorAll('.photo-item img')].map(img => img.getAttribute('data-clean-name')));
 
                     const fragment = document.createDocumentFragment();
                     let hasNewPhoto = false;
