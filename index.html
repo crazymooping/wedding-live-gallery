@@ -29,34 +29,36 @@
             font-family: 'Noto Serif Thai', -apple-system, serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            padding: 50px 16px 80px;
+            padding: 36px 12px 60px;
             text-align: center;
             min-height: 100vh;
         }
 
-        /* ส่วนหัว Header */
+        /* ส่วนหัว Header แก้ไขสัดส่วนบนมือถือ */
         header {
             max-width: 800px;
-            margin: 0 auto 40px;
+            margin: 0 auto 32px;
         }
 
         .live-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 11px;
-            letter-spacing: 4px;
+            display: inline-block;
+            font-size: 10px;
+            letter-spacing: 3px;
             text-transform: uppercase;
             color: var(--champagne-gold);
             font-weight: 400;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
+            line-height: 1;
         }
 
         .pulsing-dot {
+            display: inline-block;
             width: 6px;
             height: 6px;
             background-color: var(--champagne-gold);
             border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
             animation: pulse 2s infinite ease-in-out;
         }
 
@@ -68,40 +70,44 @@
 
         h1.couple-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 42px;
+            font-size: 32px;
             font-weight: 300;
-            letter-spacing: 5px;
-            line-height: 1.1;
+            letter-spacing: 4px;
+            line-height: 1.2;
             color: var(--text-main);
             text-transform: uppercase;
         }
 
         .event-date {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 14px;
-            letter-spacing: 6px;
+            font-size: 13px;
+            letter-spacing: 5px;
             color: var(--champagne-gold);
-            margin-top: 10px;
+            margin-top: 8px;
             font-weight: 400;
         }
 
         .gold-divider {
-            width: 60px;
+            width: 50px;
             height: 1px;
             background: linear-gradient(90deg, transparent, var(--champagne-gold), transparent);
-            margin: 24px auto 0;
+            margin: 18px auto 0;
         }
 
-        /* Clean Grid Layout เรียงแถวระเบียบ สบายตา */
+        /* Grid ตอบสนองสมบูรณ์แบบบนมือถือ (บังคับ 2 คอลัมน์เสมอ) */
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
             max-width: 1050px;
             margin: 0 auto;
         }
 
         @media (min-width: 600px) {
+            body { padding: 50px 16px 80px; }
+            header { margin-bottom: 40px; }
+            h1.couple-title { font-size: 42px; letter-spacing: 5px; }
+            .event-date { font-size: 14px; letter-spacing: 6px; }
             .gallery-grid {
                 grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
                 gap: 16px;
@@ -135,9 +141,9 @@
         }
 
         .photo-item:hover, .photo-item:active {
-            transform: translateY(-4px);
+            transform: translateY(-3px);
             border-color: var(--champagne-gold);
-            box-shadow: 0 10px 25px rgba(184, 155, 106, 0.2);
+            box-shadow: 0 8px 20px rgba(184, 155, 106, 0.2);
         }
 
         .photo-item img {
@@ -151,16 +157,16 @@
             transform: scale(1.05);
         }
 
-        /* ป้ายเวลาแสดงผลตลอดเวลา */
+        /* ป้ายเวลาแสดงผลมุมซ้ายล่าง */
         .time-badge {
             position: absolute;
-            bottom: 8px;
-            left: 8px;
+            bottom: 6px;
+            left: 6px;
             background: rgba(24, 18, 16, 0.65);
             color: #FAF7F2;
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 300;
-            padding: 3px 8px;
+            padding: 2px 7px;
             border-radius: 4px;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
@@ -265,8 +271,7 @@
 
     <header>
         <div class="live-badge">
-            <span class="pulsing-dot"></span>
-            LIVE GALLERY
+            <span class="pulsing-dot"></span>LIVE GALLERY
         </div>
         <h1 class="couple-title">Pui & Flook</h1>
         <div class="event-date">01 · 11 · 2026</div>
