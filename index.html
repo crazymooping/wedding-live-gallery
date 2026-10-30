@@ -339,7 +339,7 @@
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            padding: 24px;
+            padding: 16px;
             opacity: 0;
             transition: opacity 0.35s ease;
             touch-action: auto;
@@ -350,6 +350,7 @@
             opacity: 1;
         }
 
+        /* 🌟 ตัวคลุมรูปภาพพร้อมปุ่มเลื่อนรูป ซ้าย-ขวา */
         .modal-wrapper {
             position: relative;
             display: flex;
@@ -373,23 +374,23 @@
             to { transform: scale(1); opacity: 1; }
         }
 
-        /* 🌟 ปุ่มเลื่อนรูปภาพ ซ้าย-ขวา */
+        /* 🌟 สไตล์ปุ่มเลื่อนรูปภาพ ซ้าย-ขวา */
         .nav-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(24, 18, 16, 0.6);
+            background: rgba(24, 18, 16, 0.7);
             border: 1px solid var(--champagne-gold);
             color: #FAF7F2;
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             font-size: 18px;
-            z-index: 1010;
+            z-index: 1020;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             transition: all 0.25s ease;
@@ -401,53 +402,34 @@
             color: #120E0D;
         }
 
-        .nav-btn.prev { left: 10px; }
-        .nav-btn.next { right: 10px; }
+        .nav-btn.prev { left: 4px; }
+        .nav-btn.next { right: 4px; }
 
         @media (max-width: 600px) {
             .nav-btn {
-                width: 36px;
-                height: 36px;
-                font-size: 14px;
+                width: 38px;
+                height: 38px;
+                font-size: 15px;
             }
             .nav-btn.prev { left: 2px; }
             .nav-btn.next { right: 2px; }
         }
 
         .modal-actions {
-            margin-top: 20px;
+            margin-top: 14px;
             display: flex;
             flex-direction: column;
             gap: 10px;
             align-items: center;
         }
 
-        .download-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: transparent;
-            color: #FAF7F2;
-            padding: 9px 22px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-weight: 300;
-            font-size: 13px;
-            cursor: pointer;
-            letter-spacing: 1px;
-            border: 1px solid var(--champagne-gold);
-            transition: all 0.3s ease;
-        }
-
-        .download-btn:hover {
-            background: var(--champagne-gold);
-            color: #120E0D;
-        }
-
+        /* 🌟 ปรับขนาดข้อความให้ย่อลงมากำลังสวย สไตล์คล้ายของเดิม */
         .save-tip {
-            font-size: 11px;
-            color: rgba(250, 247, 242, 0.6);
+            font-size: 12px;
+            color: rgba(250, 247, 242, 0.85);
             font-weight: 300;
+            text-align: center;
+            letter-spacing: 0.5px;
         }
 
         .close-btn {
@@ -459,6 +441,7 @@
             font-weight: 200;
             cursor: pointer;
             transition: color 0.2s;
+            z-index: 1030;
         }
 
         .close-btn:hover {
@@ -644,7 +627,7 @@
     <div id="photoModal" class="modal" onclick="closeModal(event)">
         <span class="close-btn" onclick="hideModal()">&times;</span>
         
-        <!-- 🌟 คลุมด้วย Wrapper พร้อมปุ่มลูกศรเลื่อนซ้าย-ขวา -->
+        <!-- 🌟 คลุมด้วย Wrapper พร้อมปุ่มเลื่อนรูปภาพ ซ้าย-ขวา -->
         <div class="modal-wrapper" onclick="event.stopPropagation()">
             <button class="nav-btn prev" onclick="navigatePhoto(-1)">❮</button>
             <img class="modal-content" id="modalImg" src="" alt="Preview">
@@ -652,14 +635,6 @@
         </div>
 
         <div class="modal-actions" onclick="event.stopPropagation()">
-            <a id="downloadBtn" class="download-btn" href="" target="_blank">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                ดาวน์โหลดรูปต้นฉบับ
-            </a>
             <span class="save-tip">💡 กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
         </div>
     </div>
@@ -905,9 +880,8 @@
             } catch (err) { console.error(err); }
         }
 
-        // 🌟 อัปเดตฟังก์ชัน openModal ให้จัดเก็บรายการรูปภาพปัจจุบัน
+        // 🌟 ดึงรายการรูปภาพและดัชนีปัจจุบันสำหรับสลับรูป
         function openModal(fastPreviewUrl, fullUrl, fileId) {
-            // ดึงรายการรูปทั้งหมดที่กำลังแสดงผลอยู่ตามตัวกรอง
             const visibleItems = [...document.querySelectorAll('.photo-item:not(.hidden)')];
             currentPhotoList = visibleItems.map(item => {
                 const id = item.getAttribute('data-id');
@@ -925,7 +899,7 @@
             document.getElementById('photoModal').classList.add('active');
         }
 
-        // 🌟 ฟังก์ชันแสดงผลรูปภาพตามดัชนีปัจจุบัน
+        // 🌟 แสดงผลรูปภาพตามดัชนี (คงระบบเดิม: แสดง s1600 ทันทีแล้วโหลด s0 มาทับ)
         function updateModalPhoto() {
             if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
 
@@ -935,15 +909,12 @@
             modalImg.src = photo.fastPreviewUrl;
             modalImg.srcset = `${photo.fullUrl} 1x`;
 
-            document.getElementById('downloadBtn').href = photo.fullUrl;
-
             const fullImg = new Image();
             fullImg.src = photo.fullUrl;
             fullImg.onload = () => {
                 modalImg.src = photo.fullUrl;
             };
 
-            // โหลดรูปถัดไปล่วงหน้าเพิ่มความลื่นไหล
             const nextIdx = (currentPhotoIndex + 1) % currentPhotoList.length;
             preloadHighRes(currentPhotoList[nextIdx].fastPreviewUrl, currentPhotoList[nextIdx].fullUrl);
         }
