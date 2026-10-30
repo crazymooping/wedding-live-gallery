@@ -283,7 +283,6 @@
             color: #FFFFFF;
         }
 
-        /* 🌟 ป้ายแสดงเลขรูปภาพ */
         .photo-num-badge {
             position: absolute;
             top: 6px;
@@ -385,6 +384,7 @@
             object-fit: contain;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             animation: modalZoom 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: filter 0.3s ease;
         }
 
         @keyframes modalZoom {
@@ -675,12 +675,9 @@
         let touchStartX = 0;
         let touchEndX = 0;
 
-        // 🌟 ฟังก์ชันดึงเลขรูปภาพรวมถึงขีดต่อท้าย (เช่น PreWedding-008-2.jpg -> 008-2)
         function extractPhotoNumber(filename) {
             if (!filename) return '';
-            const cleanName = filename.replace(/\.[^/.]+$/, ""); // ตัดนามสกุลไฟล์ออก
-            
-            // ดึงเฉพาะตัวเลขและขีด (-) ที่ต่อท้ายชื่อไฟล์
+            const cleanName = filename.replace(/\.[^/.]+$/, "");
             const match = cleanName.match(/(\d+(?:-\d+)*)$/);
             if (match && match[1]) {
                 return match[1];
@@ -888,6 +885,7 @@
             } catch (err) { console.error(err); }
         }
 
+        // 🌟 ดึงข้อมูลคิวภาพรองรับ Smart Progressive Loading
         function openModal(fastPreviewUrl, fullUrl, fileId) {
             const visibleItems = [...document.querySelectorAll('.photo-item:not(.hidden)')];
             currentPhotoList = visibleItems.map(item => {
@@ -897,6 +895,7 @@
                 return {
                     id: id,
                     num: num,
+                    thumbUrl: `https://lh3.googleusercontent.com/d/${id}=s400`,
                     fastPreviewUrl: `https://lh3.googleusercontent.com/d/${id}=s1600`,
                     fullUrl: `https://lh3.googleusercontent.com/d/${id}=s0`
                 };
@@ -909,6 +908,7 @@
             updateModalPhoto();
         }
 
+        // 🌟 ระบบ Smart Progressive Loading: ภาพเด้งทันที 0 วินาที แล้วสลับภาพชัดเบื้องหลัง
         function updateModalPhoto() {
             if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
 
@@ -916,9 +916,20 @@
             const modalImg = document.getElementById('modalImg');
             const modalPhotoNum = document.getElementById('modalPhotoNum');
 
-            modalImg.src = photo.fastPreviewUrl;
-            modalImg.srcset = `${photo.fullUrl} 1x`;
-            
+            // ⚡ 1. เอารูปย่อ s400 แสดงผลทันทีใน 0 วินาที
+            modalImg.src = photo.thumbUrl;
+            modalImg.srcset = '';
+
+            // ⚡ 2. แอบดึงรูปชัด s1600 มาสลับทับเนียนๆ หลังโหลดเสร็จ
+            const highResImg = new Image();
+            highResImg.src = photo.fastPreviewUrl;
+            highResImg.onload = () => {
+                if (currentPhotoList[currentPhotoIndex] && currentPhotoList[currentPhotoIndex].id === photo.id) {
+                    modalImg.src = photo.fastPreviewUrl;
+                    modalImg.srcset = `${photo.fullUrl} 1x`;
+                }
+            };
+
             if (modalPhotoNum) {
                 modalPhotoNum.textContent = photo.num ? `NO. ${photo.num}` : '';
             }
