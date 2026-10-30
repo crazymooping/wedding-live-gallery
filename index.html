@@ -415,7 +415,9 @@
             color: #FAF7F2;
         }
 
-        /* 🌟 ปุ่มเลือกงานสำหรับทีมงาน */
+        /* ========================================== */
+        /* 🌟 ปุ่มเลือกงานแบบใส่รูปเจ้าบ่าวเจ้าสาว      */
+        /* ========================================== */
         .portal-modal {
             display: flex;
             position: fixed;
@@ -479,6 +481,7 @@
             gap: 16px;
         }
 
+        /* การ์ดปุ่มแบบมีรูปพื้นหลัง */
         .portal-event-btn {
             position: relative;
             width: 100%;
@@ -494,6 +497,7 @@
             background-color: #EFECE6;
         }
 
+        /* เลเยอร์มืดไล่ระดับ เพื่อให้ตัวหนังสืออ่านง่ายและลักชูรี */
         .portal-event-btn::before {
             content: '';
             position: absolute;
@@ -511,6 +515,11 @@
             border-color: #FAF7F2;
         }
 
+        .portal-event-btn:hover::before, .portal-event-btn:active::before {
+            background: linear-gradient(180deg, rgba(18, 14, 13, 0.15) 0%, rgba(18, 14, 13, 0.65) 100%);
+        }
+
+        /* ข้อความชื่องานในปุ่ม */
         .portal-event-content {
             position: relative;
             z-index: 2;
@@ -544,17 +553,20 @@
 
 <body>
 
+    <!-- 🌟 ป๊อปอัปหน้าต่างเลือกงาน "Photo Gallery By Piwat" -->
     <div id="portalModal" class="portal-modal">
         <div class="portal-box">
             <h2 class="portal-main-title">Photo Gallery</h2>
             <div class="portal-subtitle">BY PIWAT</div>
             <div class="gold-divider" style="margin-bottom: 20px;"></div>
-            <div class="event-buttons-list" id="eventButtonsList"></div>
+            <div class="event-buttons-list" id="eventButtonsList">
+                <!-- รายชื่อปุ่มงานพร้อมรูปภาพจะถูกสร้างอัตโนมัติจาก JS -->
+            </div>
         </div>
     </div>
 
     <header>
-        <button class="switch-event-btn" id="switchEventBtn" onclick="openPortalModal()">🔄 เลือกงาน</button>
+        <button class="switch-event-btn" onclick="openPortalModal()">🔄 เลือกงาน</button>
         <div class="live-badge">
             <span class="pulsing-dot"></span>LIVE GALLERY
         </div>
@@ -596,11 +608,15 @@
     </div>
 
     <script>
+        // ==========================================
+        // ⚙️ คลังข้อมูลงานทั้งหมด (ใส่อัปโหลดรูปภาพ coverImg เพิ่ม)
+        // ==========================================
         const EVENTS_CONFIG = {
             'pui-flook': {
                 title: 'Pui & Flook',
                 date: '01 · 11 · 2026',
                 folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK',
+                // ใส่ลิงก์รูปคู่บ่าวสาว (ตัวอย่างใช้รูปจาก Google Drive ของงานนั้นเอง) https://drive.google.com/thumbnail?id=(ใส่idตรงนี้)&sz=w800
                 coverImg: 'https://drive.google.com/thumbnail?id=15F8j-Fgd2p2k2GCfjYUsz_2EwT709AQ2&sz=w800'
             },/*
             'event-b': {
@@ -609,13 +625,12 @@
                 folderId: 'YOUR_NEW_FOLDER_ID_B',
                 coverImg: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
             },
-            */
             'event-c': {
                 title: 'test event C',
                 date: '1 · 11 · 2026',
                 folderId: 'YOUR_NEW_FOLDER_ID_C',
                 coverImg: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'
-            }
+            }*/
         };
 
         const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
@@ -626,6 +641,7 @@
         const imageCache = new Map();
         let currentFilter = 'all';
 
+        // สร้างการ์ดปุ่มเลือกระดับงานพร้อมรูปพื้นหลัง
         function renderPortalButtons() {
             const list = document.getElementById('eventButtonsList');
             list.innerHTML = '';
@@ -635,6 +651,7 @@
                 const btn = document.createElement('div');
                 btn.className = 'portal-event-btn';
                 
+                // ถ้าระบุ coverImg จะใส่เป็นรูปพื้นหลัง ถ้าระบุไม่ได้จะใช้สีทองเรียบ
                 if (ev.coverImg) {
                     btn.style.backgroundImage = `url('${ev.coverImg}')`;
                 }
@@ -856,11 +873,8 @@
             const paramEvent = urlParams.get('event');
 
             if (paramEvent && EVENTS_CONFIG[paramEvent]) {
-                // 🔒 ถ้าเข้าผ่าน QR Code รายงาน -> ซ่อนปุ่มเลือกงานทันทีเพื่อความเป็นส่วนตัว
-                document.getElementById('switchEventBtn').style.display = 'none';
                 selectEvent(paramEvent);
             } else {
-                // 🔓 ถ้าเข้าผ่าน URL เปล่าๆ -> เปิดป๊อปอัปให้ทีมงานกดเลือกลูกค้า
                 openPortalModal();
             }
 
