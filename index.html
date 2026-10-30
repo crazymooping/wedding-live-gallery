@@ -617,19 +617,19 @@
                 date: '01 · 11 · 2026',
                 folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK',
                 // ใส่ลิงก์รูปคู่บ่าวสาว (ตัวอย่างใช้รูปจาก Google Drive ของงานนั้นเอง) https://drive.google.com/thumbnail?id=(ใส่idตรงนี้)&sz=w800
-                coverImg: 'https://drive.google.com/thumbnail?id=15F8j-Fgd2p2k2GCfjYUsz_2EwT709AQ2&sz=w800'
+                // coverImg: 'https://drive.google.com/thumbnail?id=15F8j-Fgd2p2k2GCfjYUsz_2EwT709AQ2&sz=w800'
             },/*
             'event-b': {
                 title: 'test event B',
                 date: '1 · 11 · 2026',
                 folderId: 'YOUR_NEW_FOLDER_ID_B',
-                coverImg: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
+                // coverImg: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
             },
             'event-c': {
                 title: 'test event C',
                 date: '1 · 11 · 2026',
                 folderId: 'YOUR_NEW_FOLDER_ID_C',
-                coverImg: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'
+                // coverImg: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'
             }*/
         };
 
@@ -819,11 +819,12 @@
                             const timeText = formatTime(file.createdTime);
                             const isLiked = favs.has(file.id);
 
+                            /* ⚡ จุดแก้ไขเพิ่มสปีด: ใส่ decoding="async" ให้มือถือประมวลผลเรนเดอร์รูปภาพจาก Cache ได้ไวยิ่งขึ้น */
                             item.innerHTML = `
                                 <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(event, '${file.id}')">
                                     ${isLiked ? '❤️' : '🤍'}
                                 </button>
-                                <img src="${thumbUrl}" alt="${file.name}" data-clean-name="${cleanName}" crossorigin="anonymous" loading="lazy" 
+                                <img src="${thumbUrl}" alt="${file.name}" data-clean-name="${cleanName}" crossorigin="anonymous" loading="lazy" decoding="async" 
                                      ontouchstart="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
                                      onmouseenter="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
                                      onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
