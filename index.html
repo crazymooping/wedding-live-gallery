@@ -283,6 +283,25 @@
             color: #FFFFFF;
         }
 
+        /* 🌟 ป้ายแสดงเลขรูปภาพ */
+        .photo-num-badge {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            background: rgba(24, 18, 16, 0.75);
+            color: var(--champagne-gold);
+            font-size: clamp(9px, 1.1vw, 11px);
+            font-weight: 500;
+            padding: 2px 7px;
+            border-radius: 4px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            pointer-events: none;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(184, 155, 106, 0.4);
+            z-index: 9;
+        }
+
         .time-badge {
             position: absolute;
             bottom: 6px;
@@ -350,7 +369,6 @@
             opacity: 1;
         }
 
-        /* 🌟 ตัวคลุมรูปภาพพร้อมปุ่มเลื่อนรูป ซ้าย-ขวา */
         .modal-wrapper {
             position: relative;
             display: flex;
@@ -374,7 +392,6 @@
             to { transform: scale(1); opacity: 1; }
         }
 
-        /* 🌟 สไตล์ปุ่มเลื่อนรูปภาพ ซ้าย-ขวา */
         .nav-btn {
             position: absolute;
             top: 50%;
@@ -419,11 +436,17 @@
             margin-top: 14px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
             align-items: center;
         }
 
-        /* 🌟 ปรับขนาดข้อความให้ย่อลงมากำลังสวย สไตล์คล้ายของเดิม */
+        .modal-photo-num {
+            font-size: 13px;
+            color: var(--champagne-gold);
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
         .save-tip {
             font-size: 12px;
             color: rgba(250, 247, 242, 0.85);
@@ -448,9 +471,6 @@
             color: #FAF7F2;
         }
 
-        /* ========================================== */
-        /* 🌟 ปุ่มเลือกงานแบบใส่รูปเจ้าบ่าวเจ้าสาว      */
-        /* ========================================== */
         .portal-modal {
             display: flex;
             position: fixed;
@@ -514,7 +534,6 @@
             gap: 16px;
         }
 
-        /* การ์ดปุ่มแบบมีรูปพื้นหลัง */
         .portal-event-btn {
             position: relative;
             width: 100%;
@@ -530,7 +549,6 @@
             background-color: #EFECE6;
         }
 
-        /* เลเยอร์มืดไล่ระดับ เพื่อให้ตัวหนังสืออ่านง่ายและลักชูรี */
         .portal-event-btn::before {
             content: '';
             position: absolute;
@@ -552,7 +570,6 @@
             background: linear-gradient(180deg, rgba(18, 14, 13, 0.15) 0%, rgba(18, 14, 13, 0.65) 100%);
         }
 
-        /* ข้อความชื่องานในปุ่ม */
         .portal-event-content {
             position: relative;
             z-index: 2;
@@ -586,15 +603,12 @@
 
 <body>
 
-    <!-- 🌟 ป๊อปอัปหน้าต่างเลือกงาน "Photo Gallery By Piwat" -->
     <div id="portalModal" class="portal-modal">
         <div class="portal-box">
             <h2 class="portal-main-title">Photo Gallery</h2>
             <div class="portal-subtitle">BY PIWAT</div>
             <div class="gold-divider" style="margin-bottom: 20px;"></div>
-            <div class="event-buttons-list" id="eventButtonsList">
-                <!-- รายชื่อปุ่มงานพร้อมรูปภาพจะถูกสร้างอัตโนมัติจาก JS -->
-            </div>
+            <div class="event-buttons-list" id="eventButtonsList"></div>
         </div>
     </div>
 
@@ -627,7 +641,6 @@
     <div id="photoModal" class="modal" onclick="closeModal(event)">
         <span class="close-btn" onclick="hideModal()">&times;</span>
         
-        <!-- 🌟 คลุมด้วย Wrapper พร้อมปุ่มเลื่อนรูปภาพ ซ้าย-ขวา -->
         <div class="modal-wrapper" onclick="event.stopPropagation()">
             <button class="nav-btn prev" onclick="navigatePhoto(-1)">❮</button>
             <img class="modal-content" id="modalImg" src="" alt="Preview">
@@ -635,34 +648,18 @@
         </div>
 
         <div class="modal-actions" onclick="event.stopPropagation()">
+            <div class="modal-photo-num" id="modalPhotoNum">NO. ---</div>
             <span class="save-tip">💡 กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
         </div>
     </div>
 
     <script>
-        // ==========================================
-        // ⚙️ คลังข้อมูลงานทั้งหมด (ใส่อัปโหลดรูปภาพ coverImg เพิ่ม)
-        // ==========================================
         const EVENTS_CONFIG = {
             'pui-flook': {
                 title: 'Pui & Flook',
                 date: '01 · 11 · 2026',
                 folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK',
-                // ใส่ลิงก์รูปคู่บ่าวสาว (ตัวอย่างใช้รูปจาก Google Drive ของงานนั้นเอง) https://drive.google.com/thumbnail?id=(ใส่idตรงนี้)&sz=w800
-                // coverImg: 'https://drive.google.com/thumbnail?id=15F8j-Fgd2p2k2GCfjYUsz_2EwT709AQ2&sz=w800'
-            },/*
-            'event-b': {
-                title: 'test event B',
-                date: '1 · 11 · 2026',
-                folderId: 'YOUR_NEW_FOLDER_ID_B',
-                // coverImg: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
-            },
-            'event-c': {
-                title: 'test event C',
-                date: '1 · 11 · 2026',
-                folderId: 'YOUR_NEW_FOLDER_ID_C',
-                // coverImg: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'
-            }*/
+            }
         };
 
         const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
@@ -673,13 +670,24 @@
         const imageCache = new Map();
         let currentFilter = 'all';
 
-        // 🌟 ตัวแปรสำหรับการเลื่อนรูปภาพ
         let currentPhotoList = [];
         let currentPhotoIndex = -1;
         let touchStartX = 0;
         let touchEndX = 0;
 
-        // สร้างการ์ดปุ่มเลือกระดับงานพร้อมรูปพื้นหลัง
+        // 🌟 ฟังก์ชันดึงเลขรูปภาพรวมถึงขีดต่อท้าย (เช่น PreWedding-008-2.jpg -> 008-2)
+        function extractPhotoNumber(filename) {
+            if (!filename) return '';
+            const cleanName = filename.replace(/\.[^/.]+$/, ""); // ตัดนามสกุลไฟล์ออก
+            
+            // ดึงเฉพาะตัวเลขและขีด (-) ที่ต่อท้ายชื่อไฟล์
+            const match = cleanName.match(/(\d+(?:-\d+)*)$/);
+            if (match && match[1]) {
+                return match[1];
+            }
+            return cleanName;
+        }
+
         function renderPortalButtons() {
             const list = document.getElementById('eventButtonsList');
             list.innerHTML = '';
@@ -689,7 +697,6 @@
                 const btn = document.createElement('div');
                 btn.className = 'portal-event-btn';
                 
-                // ถ้าระบุ coverImg จะใส่เป็นรูปพื้นหลัง ถ้าระบุไม่ได้จะใช้สีทองเรียบ
                 if (ev.coverImg) {
                     btn.style.backgroundImage = `url('${ev.coverImg}')`;
                 }
@@ -851,18 +858,19 @@
                             item.className = 'photo-item';
                             item.setAttribute('data-id', file.id);
 
+                            const photoNum = extractPhotoNumber(file.name);
                             const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s400`;
                             const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
                             const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
                             const timeText = formatTime(file.createdTime);
                             const isLiked = favs.has(file.id);
 
-                            /* ⚡ จุดแก้ไขเพิ่มสปีด: ใส่ decoding="async" ให้มือถือประมวลผลเรนเดอร์รูปภาพจาก Cache ได้ไวยิ่งขึ้น */
                             item.innerHTML = `
+                                <div class="photo-num-badge">NO. ${photoNum}</div>
                                 <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(event, '${file.id}')">
                                     ${isLiked ? '❤️' : '🤍'}
                                 </button>
-                                <img src="${thumbUrl}" alt="${file.name}" data-clean-name="${cleanName}" crossorigin="anonymous" loading="lazy" decoding="async" 
+                                <img src="${thumbUrl}" alt="${file.name}" data-clean-name="${cleanName}" data-photo-num="${photoNum}" crossorigin="anonymous" loading="lazy" decoding="async" 
                                      ontouchstart="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
                                      onmouseenter="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
                                      onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
@@ -880,13 +888,15 @@
             } catch (err) { console.error(err); }
         }
 
-        // 🌟 ดึงรายการรูปภาพและดัชนีปัจจุบันสำหรับสลับรูป
         function openModal(fastPreviewUrl, fullUrl, fileId) {
             const visibleItems = [...document.querySelectorAll('.photo-item:not(.hidden)')];
             currentPhotoList = visibleItems.map(item => {
                 const id = item.getAttribute('data-id');
+                const imgEl = item.querySelector('img');
+                const num = imgEl ? imgEl.getAttribute('data-photo-num') : '';
                 return {
                     id: id,
+                    num: num,
                     fastPreviewUrl: `https://lh3.googleusercontent.com/d/${id}=s1600`,
                     fullUrl: `https://lh3.googleusercontent.com/d/${id}=s0`
                 };
@@ -895,31 +905,31 @@
             currentPhotoIndex = currentPhotoList.findIndex(item => item.id === fileId);
             if (currentPhotoIndex === -1) currentPhotoIndex = 0;
 
-            updateModalPhoto();
             document.getElementById('photoModal').classList.add('active');
+            updateModalPhoto();
         }
 
-        // 🌟 แสดงผลรูปภาพตามดัชนี (คงระบบเดิม: แสดง s1600 ทันทีแล้วโหลด s0 มาทับ)
         function updateModalPhoto() {
             if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
 
             const photo = currentPhotoList[currentPhotoIndex];
             const modalImg = document.getElementById('modalImg');
+            const modalPhotoNum = document.getElementById('modalPhotoNum');
 
             modalImg.src = photo.fastPreviewUrl;
             modalImg.srcset = `${photo.fullUrl} 1x`;
-
-            const fullImg = new Image();
-            fullImg.src = photo.fullUrl;
-            fullImg.onload = () => {
-                modalImg.src = photo.fullUrl;
-            };
+            
+            if (modalPhotoNum) {
+                modalPhotoNum.textContent = photo.num ? `NO. ${photo.num}` : '';
+            }
 
             const nextIdx = (currentPhotoIndex + 1) % currentPhotoList.length;
+            const prevIdx = (currentPhotoIndex - 1 + currentPhotoList.length) % currentPhotoList.length;
+
             preloadHighRes(currentPhotoList[nextIdx].fastPreviewUrl, currentPhotoList[nextIdx].fullUrl);
+            preloadHighRes(currentPhotoList[prevIdx].fastPreviewUrl, currentPhotoList[prevIdx].fullUrl);
         }
 
-        // 🌟 ฟังก์ชันสลับรูปถัดไป / ก่อนหน้า
         function navigatePhoto(direction) {
             if (currentPhotoList.length === 0) return;
             currentPhotoIndex += direction;
@@ -942,7 +952,6 @@
 
         function closeModal(event) { if (event.target.classList.contains('modal')) hideModal(); }
 
-        // 🌟 รองรับการกดปุ่มลูกศร บนคีย์บอร์ด
         window.addEventListener('keydown', (e) => {
             const modal = document.getElementById('photoModal');
             if (!modal.classList.contains('active')) return;
@@ -956,7 +965,6 @@
             }
         });
 
-        // 🌟 รองรับการปัดหน้าจอ ซ้าย-ขวา บนมือถือ
         const modalContainer = document.getElementById('photoModal');
         modalContainer.addEventListener('touchstart', (e) => {
             touchStartX = e.changedTouches[0].screenX;
@@ -970,10 +978,10 @@
         function handleSwipe() {
             const swipeThreshold = 50;
             if (touchEndX < touchStartX - swipeThreshold) {
-                navigatePhoto(1); // ปัดซ้าย -> ไปรูปถัดไป
+                navigatePhoto(1);
             }
             if (touchEndX > touchStartX + swipeThreshold) {
-                navigatePhoto(-1); // ปัดขวา -> ย้อนกลับรูปก่อนหน้า
+                navigatePhoto(-1);
             }
         }
 
