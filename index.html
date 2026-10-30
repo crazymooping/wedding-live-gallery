@@ -471,6 +471,7 @@
             color: #FAF7F2;
         }
 
+        /* 🌟 ปุ่มเลือกงานแบบ Luxury Minimal */
         .portal-modal {
             display: flex;
             position: fixed;
@@ -479,9 +480,9 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(250, 247, 242, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background-color: rgba(18, 14, 13, 0.45);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
             align-items: center;
             justify-content: center;
             padding: 20px;
@@ -497,22 +498,22 @@
 
         .portal-box {
             text-align: center;
-            max-width: 440px;
+            max-width: 400px;
             width: 100%;
             max-height: 85vh;
             overflow-y: auto;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 30px 20px;
-            border-radius: 16px;
-            border: 1px solid rgba(184, 155, 106, 0.25);
-            box-shadow: 0 15px 35px rgba(62, 47, 43, 0.08);
+            background: rgba(250, 247, 242, 0.92);
+            padding: 36px 24px;
+            border-radius: 24px;
+            border: 1px solid rgba(184, 155, 106, 0.35);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15), 0 0 30px rgba(184, 155, 106, 0.15);
         }
 
         .portal-main-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(28px, 5vw, 38px);
+            font-size: clamp(28px, 5vw, 36px);
             color: var(--text-main);
-            letter-spacing: 5px;
+            letter-spacing: 6px;
             margin-bottom: 2px;
             text-transform: uppercase;
             font-weight: 400;
@@ -520,10 +521,10 @@
 
         .portal-subtitle {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--champagne-gold);
-            letter-spacing: 4px;
-            margin-bottom: 20px;
+            letter-spacing: 5px;
+            margin-bottom: 22px;
             text-transform: uppercase;
             font-weight: 500;
         }
@@ -531,72 +532,78 @@
         .event-buttons-list {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
         .portal-event-btn {
             position: relative;
             width: 100%;
-            height: 120px;
-            border-radius: 12px;
-            border: 1px solid var(--champagne-gold);
-            overflow: hidden;
+            padding: 20px 16px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #FAF7F2 0%, #F3EDE2 100%);
+            border: 1px solid rgba(184, 155, 106, 0.4);
             cursor: pointer;
+            overflow: hidden;
             transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
-            box-shadow: 0 6px 16px rgba(62, 47, 43, 0.08);
-            background-size: cover;
-            background-position: center;
-            background-color: #EFECE6;
+            box-shadow: 0 4px 15px rgba(62, 47, 43, 0.04);
         }
 
-        .portal-event-btn::before {
+        .portal-event-btn::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(180deg, rgba(18, 14, 13, 0.25) 0%, rgba(18, 14, 13, 0.75) 100%);
-            transition: background 0.3s ease;
+            top: -50%;
+            left: -60%;
+            width: 50%;
+            height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            transform: rotate(30deg);
+            transition: all 0.6s ease;
+        }
+
+        .portal-event-btn:hover::after {
+            left: 130%;
         }
 
         .portal-event-btn:hover, .portal-event-btn:active {
-            transform: translateY(-3px) scale(1.01);
-            box-shadow: 0 10px 25px rgba(184, 155, 106, 0.35);
-            border-color: #FAF7F2;
-        }
-
-        .portal-event-btn:hover::before, .portal-event-btn:active::before {
-            background: linear-gradient(180deg, rgba(18, 14, 13, 0.15) 0%, rgba(18, 14, 13, 0.65) 100%);
+            transform: translateY(-3px);
+            border-color: var(--champagne-gold);
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F2E7 100%);
+            box-shadow: 0 10px 25px rgba(184, 155, 106, 0.25);
         }
 
         .portal-event-content {
-            position: relative;
-            z-index: 2;
-            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #FAF7F2;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-            padding: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .portal-event-icon {
+            font-size: 11px;
+            color: var(--champagne-gold);
+            margin-bottom: 4px;
+            letter-spacing: 2px;
+            opacity: 0.85;
         }
 
         .portal-event-title {
             font-family: 'Cormorant Garamond', serif;
             font-size: 24px;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
             text-transform: uppercase;
-            font-weight: 400;
+            font-weight: 500;
+            color: var(--text-main);
         }
 
         .portal-event-date {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 12px;
+            font-size: 13px;
             letter-spacing: 3px;
-            color: #dfba6c;
+            color: var(--champagne-gold);
             margin-top: 2px;
+            font-weight: 400;
         }
     </style>
 </head>
@@ -660,6 +667,11 @@
                 date: '01 · 11 · 2026',
                 folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK',
             }
+            // 'jj': {
+            //     title: 'jj',
+            //     date: '01 · 11 · 2026',
+            //     folderId: ' ',
+            // }
         };
 
         const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
@@ -693,13 +705,10 @@
                 const ev = EVENTS_CONFIG[key];
                 const btn = document.createElement('div');
                 btn.className = 'portal-event-btn';
-                
-                if (ev.coverImg) {
-                    btn.style.backgroundImage = `url('${ev.coverImg}')`;
-                }
 
                 btn.innerHTML = `
                     <div class="portal-event-content">
+                        <div class="portal-event-icon">✦  LIVE GALLERY  ✦</div>
                         <div class="portal-event-title">${ev.title}</div>
                         <div class="portal-event-date">${ev.date}</div>
                     </div>
@@ -885,7 +894,6 @@
             } catch (err) { console.error(err); }
         }
 
-        // 🌟 ดึงข้อมูลคิวภาพรองรับ Smart Progressive Loading
         function openModal(fastPreviewUrl, fullUrl, fileId) {
             const visibleItems = [...document.querySelectorAll('.photo-item:not(.hidden)')];
             currentPhotoList = visibleItems.map(item => {
@@ -908,7 +916,6 @@
             updateModalPhoto();
         }
 
-        // 🌟 ระบบ Smart Progressive Loading: ภาพเด้งทันที 0 วินาที แล้วสลับภาพชัดเบื้องหลัง
         function updateModalPhoto() {
             if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
 
@@ -916,11 +923,11 @@
             const modalImg = document.getElementById('modalImg');
             const modalPhotoNum = document.getElementById('modalPhotoNum');
 
-            // ⚡ 1. เอารูปย่อ s400 แสดงผลทันทีใน 0 วินาที
+            // ⚡ 1. แสดงภาพย่อ s400 ขึ้นก่อนทันที (0 วินาที)
             modalImg.src = photo.thumbUrl;
             modalImg.srcset = '';
 
-            // ⚡ 2. แอบดึงรูปชัด s1600 มาสลับทับเนียนๆ หลังโหลดเสร็จ
+            // ⚡ 2. แอบดึงภาพชัด s1600 มาสลับใส่เบื้องหลัง
             const highResImg = new Image();
             highResImg.src = photo.fastPreviewUrl;
             highResImg.onload = () => {
