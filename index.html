@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Photo Gallery by Piwat</title>
-    <!-- โหลด Google Fonts: Cormorant Garamond & Noto Serif Thai -->
+    <!-- โหลด Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Noto+Serif+Thai:wght@300;400&display=swap" rel="stylesheet">
@@ -447,7 +447,6 @@
             gap: 12px;
         }
 
-        /* 🌟 ปุ่มหัวใจเฉพาะใน Modal รองรับทั้งคอมและมือถือ */
         .modal-like-btn {
             background: rgba(24, 18, 16, 0.6);
             border: 1px solid var(--champagne-gold);
@@ -504,7 +503,6 @@
             color: #FAF7F2;
         }
 
-        /* 🌟 ปุ่มเลือกงานแบบ Luxury Minimal */
         .portal-modal {
             display: flex;
             position: fixed;
@@ -825,7 +823,6 @@
             return isLiked;
         }
 
-        // 🌟 ฟังก์ชันกดหัวใจใน Modal (ปลอดภัยสำหรับโทรศัพท์และคอมพิวเตอร์)
         function toggleModalLike(event) {
             if (event) {
                 event.stopPropagation();
@@ -997,11 +994,9 @@
             const modalImg = document.getElementById('modalImg');
             const modalPhotoNum = document.getElementById('modalPhotoNum');
 
-            // ⚡ 1. แสดงภาพย่อ s400 ขึ้นก่อนทันที (0 วินาที)
             modalImg.src = photo.thumbUrl;
             modalImg.srcset = '';
 
-            // ⚡ 2. แอบดึงภาพชัด s1600 มาสลับใส่เบื้องหลัง
             const highResImg = new Image();
             highResImg.src = photo.fastPreviewUrl;
             highResImg.onload = () => {
@@ -1015,7 +1010,6 @@
                 modalPhotoNum.textContent = photo.num ? `NO. ${photo.num}` : '';
             }
 
-            // เช็กสถานะปุ่มหัวใจใน Modal
             const favs = getFavorites();
             updateModalLikeBtnState(favs.has(photo.id));
 
@@ -1063,7 +1057,6 @@
 
         const modalContainer = document.getElementById('photoModal');
         modalContainer.addEventListener('touchstart', (e) => {
-            // ไม่ดึง Swipe หากแตะที่ปุ่มควบคุมด้านล่าง Modal
             if (e.target.closest('.modal-actions') || e.target.closest('.nav-btn')) return;
             touchStartX = e.changedTouches[0].screenX;
         }, { passive: true });
