@@ -379,7 +379,7 @@
 
         .modal-content {
             max-width: 92%;
-            max-height: 75vh;
+            max-height: 72vh;
             border-radius: 6px;
             object-fit: contain;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
@@ -436,8 +436,41 @@
             margin-top: 14px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
+            z-index: 1040;
+        }
+
+        .modal-info-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 🌟 ปุ่มหัวใจเฉพาะใน Modal รองรับทั้งคอมและมือถือ */
+        .modal-like-btn {
+            background: rgba(24, 18, 16, 0.6);
+            border: 1px solid var(--champagne-gold);
+            color: #FAF7F2;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.25s ease;
+            font-size: 15px;
+            z-index: 1050;
+            touch-action: manipulation;
+        }
+
+        .modal-like-btn.liked {
+            background: rgba(231, 76, 60, 0.9);
+            border-color: #E74C3C;
+            color: #FFFFFF;
         }
 
         .modal-photo-num {
@@ -655,7 +688,10 @@
         </div>
 
         <div class="modal-actions" onclick="event.stopPropagation()">
-            <div class="modal-photo-num" id="modalPhotoNum">NO. ---</div>
+            <div class="modal-info-row">
+                <button class="modal-like-btn" id="modalLikeBtn" onclick="toggleModalLike(event)">🤍</button>
+                <div class="modal-photo-num" id="modalPhotoNum">NO. ---</div>
+            </div>
             <span class="save-tip">💡 กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
         </div>
     </div>
@@ -667,11 +703,6 @@
                 date: '01 · 11 · 2026',
                 folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK',
             }
-            // 'jj': {
-            //     title: 'jj',
-            //     date: '01 · 11 · 2026',
-            //     folderId: ' ',
-            // }
         };
 
         const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
@@ -759,23 +790,66 @@
             document.getElementById('favCount').textContent = favs.size;
         }
 
+        function syncCardLikeBtn(fileId, isLiked) {
+            const cardItem = document.querySelector(`.photo-item[data-id="${fileId}"]`);
+            if (cardItem) {
+                const btn = cardItem.querySelector('.like-btn');
+                if (btn) {
+                    if (isLiked) {
+                        btn.classList.add('liked');
+                        btn.innerHTML = '❤️';
+                    } else {
+                        btn.classList.remove('liked');
+                        btn.innerHTML = '🤍';
+                    }
+                }
+            }
+        }
+
         function toggleLike(event, fileId) {
-            event.stopPropagation();
+            if (event) event.stopPropagation();
             const favs = getFavorites();
-            const btn = event.currentTarget;
+            let isLiked = false;
 
             if (favs.has(fileId)) {
                 favs.delete(fileId);
-                btn.classList.remove('liked');
-                btn.innerHTML = '🤍';
+                isLiked = false;
             } else {
                 favs.add(fileId);
-                btn.classList.add('liked');
-                btn.innerHTML = '❤️';
+                isLiked = true;
             }
 
             saveFavorites(favs);
+            syncCardLikeBtn(fileId, isLiked);
             applyFilter();
+            return isLiked;
+        }
+
+        // 🌟 ฟังก์ชันกดหัวใจใน Modal (ปลอดภัยสำหรับโทรศัพท์และคอมพิวเตอร์)
+        function toggleModalLike(event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            
+            if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
+            const photo = currentPhotoList[currentPhotoIndex];
+            
+            const isLiked = toggleLike(null, photo.id);
+            updateModalLikeBtnState(isLiked);
+        }
+
+        function updateModalLikeBtnState(isLiked) {
+            const modalLikeBtn = document.getElementById('modalLikeBtn');
+            if (modalLikeBtn) {
+                if (isLiked) {
+                    modalLikeBtn.classList.add('liked');
+                    modalLikeBtn.innerHTML = '❤️';
+                } else {
+                    modalLikeBtn.classList.remove('liked');
+                    modalLikeBtn.innerHTML = '🤍';
+                }
+            }
         }
 
         function setFilter(filterMode) {
@@ -941,6 +1015,10 @@
                 modalPhotoNum.textContent = photo.num ? `NO. ${photo.num}` : '';
             }
 
+            // เช็กสถานะปุ่มหัวใจใน Modal
+            const favs = getFavorites();
+            updateModalLikeBtnState(favs.has(photo.id));
+
             const nextIdx = (currentPhotoIndex + 1) % currentPhotoList.length;
             const prevIdx = (currentPhotoIndex - 1 + currentPhotoList.length) % currentPhotoList.length;
 
@@ -985,10 +1063,13 @@
 
         const modalContainer = document.getElementById('photoModal');
         modalContainer.addEventListener('touchstart', (e) => {
+            // ไม่ดึง Swipe หากแตะที่ปุ่มควบคุมด้านล่าง Modal
+            if (e.target.closest('.modal-actions') || e.target.closest('.nav-btn')) return;
             touchStartX = e.changedTouches[0].screenX;
         }, { passive: true });
 
         modalContainer.addEventListener('touchend', (e) => {
+            if (e.target.closest('.modal-actions') || e.target.closest('.nav-btn')) return;
             touchEndX = e.changedTouches[0].screenX;
             handleSwipe();
         }, { passive: true });
