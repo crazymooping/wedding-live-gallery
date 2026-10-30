@@ -26,7 +26,6 @@
             padding: 0;
         }
 
-        /* ล็อคไม่ให้หน้าเว็บเลื่อนขึ้นลง 100% บนทุกอุปกรณ์ */
         html, body {
             width: 100vw;
             height: 100vh;
@@ -107,7 +106,6 @@
             margin: 6px auto;
         }
 
-        /* ปุ่มสลับงานตรงมุมขวาบน Header */
         .switch-event-btn {
             position: absolute;
             top: 14px;
@@ -128,7 +126,6 @@
             color: #FAF7F2;
         }
 
-        /* ปุ่มสลับโหมดรูปภาพทั้งหมด / รูปที่ถูกใจ */
         .filter-container {
             margin-top: 6px;
             display: flex;
@@ -166,7 +163,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Container การ์ดรูปภาพ */
         .gallery-container {
             flex: 1;
             display: flex;
@@ -178,7 +174,6 @@
             position: relative;
         }
 
-        /* Grid รูปภาพ */
         .gallery-grid {
             display: grid;
             grid-template-rows: repeat(2, calc((100dvh - 280px) / 2));
@@ -330,7 +325,6 @@
             font-weight: 500;
         }
 
-        /* Modal ดูรูปขยาย */
         .modal {
             display: none;
             position: fixed;
@@ -422,7 +416,7 @@
         }
 
         /* ========================================== */
-        /* 🌟 ป๊อปอัปเลือกงาน (LUXURY CHAMPAGNE THEME) */
+        /* 🌟 ปุ่มเลือกงานแบบใส่รูปเจ้าบ่าวเจ้าสาว      */
         /* ========================================== */
         .portal-modal {
             display: flex;
@@ -432,7 +426,7 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(250, 247, 242, 0.94);
+            background-color: rgba(250, 247, 242, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             align-items: center;
@@ -450,10 +444,12 @@
 
         .portal-box {
             text-align: center;
-            max-width: 420px;
+            max-width: 440px;
             width: 100%;
-            background: rgba(255, 255, 255, 0.65);
-            padding: 40px 28px;
+            max-height: 85vh;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 30px 20px;
             border-radius: 16px;
             border: 1px solid rgba(184, 155, 106, 0.25);
             box-shadow: 0 15px 35px rgba(62, 47, 43, 0.08);
@@ -461,9 +457,9 @@
 
         .portal-main-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(32px, 5vw, 42px);
+            font-size: clamp(28px, 5vw, 38px);
             color: var(--text-main);
-            letter-spacing: 6px;
+            letter-spacing: 5px;
             margin-bottom: 2px;
             text-transform: uppercase;
             font-weight: 400;
@@ -471,10 +467,10 @@
 
         .portal-subtitle {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 13px;
+            font-size: 12px;
             color: var(--champagne-gold);
-            letter-spacing: 5px;
-            margin-bottom: 32px;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
             text-transform: uppercase;
             font-weight: 500;
         }
@@ -482,45 +478,75 @@
         .event-buttons-list {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 16px;
         }
 
+        /* การ์ดปุ่มแบบมีรูปพื้นหลัง */
         .portal-event-btn {
-            background: #FAF7F2;
+            position: relative;
+            width: 100%;
+            height: 120px;
+            border-radius: 12px;
             border: 1px solid var(--champagne-gold);
-            color: var(--text-main);
-            padding: 18px 20px;
-            border-radius: 30px;
-            font-size: 18px;
-            font-family: 'Cormorant Garamond', serif;
-            letter-spacing: 3px;
+            overflow: hidden;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            box-shadow: 0 4px 12px rgba(184, 155, 106, 0.08);
-            text-transform: uppercase;
+            transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 6px 16px rgba(62, 47, 43, 0.08);
+            background-size: cover;
+            background-position: center;
+            background-color: #EFECE6;
+        }
+
+        /* เลเยอร์มืดไล่ระดับ เพื่อให้ตัวหนังสืออ่านง่ายและลักชูรี */
+        .portal-event-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(18, 14, 13, 0.25) 0%, rgba(18, 14, 13, 0.75) 100%);
+            transition: background 0.3s ease;
         }
 
         .portal-event-btn:hover, .portal-event-btn:active {
-            background: var(--champagne-gold);
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 25px rgba(184, 155, 106, 0.35);
+            border-color: #FAF7F2;
+        }
+
+        .portal-event-btn:hover::before, .portal-event-btn:active::before {
+            background: linear-gradient(180deg, rgba(18, 14, 13, 0.15) 0%, rgba(18, 14, 13, 0.65) 100%);
+        }
+
+        /* ข้อความชื่องานในปุ่ม */
+        .portal-event-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             color: #FAF7F2;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(184, 155, 106, 0.35);
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+            padding: 10px;
         }
 
-        .portal-event-btn:hover .sub-date, .portal-event-btn:active .sub-date {
-            color: rgba(250, 247, 242, 0.9);
-        }
-
-        .portal-event-btn .sub-date {
-            font-size: 11px;
-            letter-spacing: 3px;
-            color: var(--champagne-gold);
+        .portal-event-title {
             font-family: 'Cormorant Garamond', serif;
-            transition: color 0.3s ease;
+            font-size: 24px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .portal-event-date {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: #dfba6c;
+            margin-top: 2px;
         }
     </style>
 </head>
@@ -532,9 +558,9 @@
         <div class="portal-box">
             <h2 class="portal-main-title">Photo Gallery</h2>
             <div class="portal-subtitle">BY PIWAT</div>
-            <div class="gold-divider" style="margin-bottom: 28px;"></div>
+            <div class="gold-divider" style="margin-bottom: 20px;"></div>
             <div class="event-buttons-list" id="eventButtonsList">
-                <!-- รายชื่อปุ่มงานจะถูกสร้างอัตโนมัติจาก JS -->
+                <!-- รายชื่อปุ่มงานพร้อมรูปภาพจะถูกสร้างอัตโนมัติจาก JS -->
             </div>
         </div>
     </div>
@@ -548,7 +574,6 @@
         <div class="event-date" id="eventDate">01 · 11 · 2026</div>
         <div class="gold-divider"></div>
         
-        <!-- ปุ่มสลับโหมดแสดงผล -->
         <div class="filter-container">
             <button class="filter-btn active" id="btnAll" onclick="setFilter('all')">📷 แสดงทั้งหมด</button>
             <button class="filter-btn" id="btnFavorites" onclick="setFilter('favorites')">❤️ รูปที่ถูกใจ (<span id="favCount">0</span>)</button>
@@ -584,25 +609,28 @@
 
     <script>
         // ==========================================
-        // ⚙️ คลังข้อมูลงานทั้งหมด (EVENTS CONFIG)
+        // ⚙️ คลังข้อมูลงานทั้งหมด (ใส่อัปโหลดรูปภาพ coverImg เพิ่ม)
         // ==========================================
         const EVENTS_CONFIG = {
             'pui-flook': {
                 title: 'Pui & Flook',
                 date: '01 · 11 · 2026',
-                folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK'
+                folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK',
+                // ใส่ลิงก์รูปคู่บ่าวสาว (ตัวอย่างใช้รูปจาก Google Drive ของงานนั้นเอง) https://drive.google.com/thumbnail?id=(ใส่idตรงนี้)&sz=w800
+                coverImg: 'https://drive.google.com/thumbnail?id=15F8j-Fgd2p2k2GCfjYUsz_2EwT709AQ2&sz=w800'
             },/*
             'event-b': {
                 title: 'test event B',
                 date: '1 · 11 · 2026',
-                folderId: 'YOUR_NEW_FOLDER_ID_B'
+                folderId: 'YOUR_NEW_FOLDER_ID_B',
+                coverImg: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
             },
-            */
             'event-c': {
                 title: 'test event C',
                 date: '1 · 11 · 2026',
-                folderId: 'YOUR_NEW_FOLDER_ID_C'
-            }
+                folderId: 'YOUR_NEW_FOLDER_ID_C',
+                coverImg: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80'
+            }*/
         };
 
         const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
@@ -613,18 +641,26 @@
         const imageCache = new Map();
         let currentFilter = 'all';
 
-        // สร้างปุ่มเลือกระดับงานในป๊อปอัปอัตโนมัติ
+        // สร้างการ์ดปุ่มเลือกระดับงานพร้อมรูปพื้นหลัง
         function renderPortalButtons() {
             const list = document.getElementById('eventButtonsList');
             list.innerHTML = '';
             
             Object.keys(EVENTS_CONFIG).forEach(key => {
                 const ev = EVENTS_CONFIG[key];
-                const btn = document.createElement('button');
+                const btn = document.createElement('div');
                 btn.className = 'portal-event-btn';
+                
+                // ถ้าระบุ coverImg จะใส่เป็นรูปพื้นหลัง ถ้าระบุไม่ได้จะใช้สีทองเรียบ
+                if (ev.coverImg) {
+                    btn.style.backgroundImage = `url('${ev.coverImg}')`;
+                }
+
                 btn.innerHTML = `
-                    <span>${ev.title}</span>
-                    <span class="sub-date">${ev.date}</span>
+                    <div class="portal-event-content">
+                        <div class="portal-event-title">${ev.title}</div>
+                        <div class="portal-event-date">${ev.date}</div>
+                    </div>
                 `;
                 btn.onclick = () => selectEvent(key);
                 list.appendChild(btn);
@@ -646,7 +682,6 @@
             document.getElementById('eventDate').textContent = currentEvent.date;
             document.title = `${currentEvent.title} — Live Gallery`;
 
-            // ล้างรูปเดิมในหน้าเว็บออก แล้วโหลดรูปงานใหม่
             document.getElementById('gallery').innerHTML = '';
             document.getElementById('portalModal').classList.add('hidden');
 
@@ -834,7 +869,6 @@
         window.addEventListener('DOMContentLoaded', () => {
             renderPortalButtons();
 
-            // เช็กว่ามีระบุ ?event= ใน URL ไหม ถ้ามีให้เข้างานนั้นเลย ถ้าไม่มีเปิดหน้าต่างเลือกงาน
             const urlParams = new URLSearchParams(window.location.search);
             const paramEvent = urlParams.get('event');
 
