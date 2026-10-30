@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PUI & FLOOK — Live Gallery</title>
+    <title>Photo Gallery by Piwat</title>
     <!-- โหลด Google Fonts: Cormorant Garamond & Noto Serif Thai -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,6 +50,7 @@
             padding: 14px 12px 8px;
             text-align: center;
             border-bottom: 1px solid rgba(184, 155, 106, 0.15);
+            position: relative;
         }
 
         .live-badge {
@@ -104,6 +105,27 @@
             height: 1px;
             background: linear-gradient(90deg, transparent, var(--champagne-gold), transparent);
             margin: 6px auto;
+        }
+
+        /* ปุ่มสลับงานตรงมุมขวาบน Header */
+        .switch-event-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: transparent;
+            border: 1px solid var(--champagne-gold);
+            color: var(--champagne-gold);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.25s ease;
+        }
+
+        .switch-event-btn:hover {
+            background: var(--champagne-gold);
+            color: #FAF7F2;
         }
 
         /* ปุ่มสลับโหมดรูปภาพทั้งหมด / รูปที่ถูกใจ */
@@ -210,7 +232,6 @@
             will-change: transform;
         }
 
-        /* เมื่อถูกซ่อนในโหมดแสดงเฉพาะที่กดใจ */
         .photo-item.hidden {
             display: none !important;
         }
@@ -237,7 +258,6 @@
             transform: scale(1.05);
         }
 
-        /* ปุ่มกดหัวใจมุมขวาบนการ์ด */
         .like-btn {
             position: absolute;
             top: 6px;
@@ -285,7 +305,6 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
-        /* ข้อความแจ้งเตือนเมื่อยังไม่ได้กดใจรูปใดๆ */
         .empty-state {
             display: none;
             position: absolute;
@@ -296,7 +315,6 @@
             pointer-events: none;
         }
 
-        /* Footer ส่วนล่างสุด */
         footer {
             flex-shrink: 0;
             text-align: center;
@@ -312,7 +330,7 @@
             font-weight: 500;
         }
 
-        /* Modal */
+        /* Modal ดูรูปขยาย */
         .modal {
             display: none;
             position: fixed;
@@ -402,17 +420,132 @@
         .close-btn:hover {
             color: #FAF7F2;
         }
+
+        /* ========================================== */
+        /* 🌟 ป๊อปอัปเลือกงาน (LUXURY CHAMPAGNE THEME) */
+        /* ========================================== */
+        .portal-modal {
+            display: flex;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(250, 247, 242, 0.94);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 1;
+            transition: opacity 0.4s ease;
+        }
+
+        .portal-modal.hidden {
+            opacity: 0;
+            pointer-events: none;
+            display: none;
+        }
+
+        .portal-box {
+            text-align: center;
+            max-width: 420px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.65);
+            padding: 40px 28px;
+            border-radius: 16px;
+            border: 1px solid rgba(184, 155, 106, 0.25);
+            box-shadow: 0 15px 35px rgba(62, 47, 43, 0.08);
+        }
+
+        .portal-main-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(32px, 5vw, 42px);
+            color: var(--text-main);
+            letter-spacing: 6px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .portal-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 13px;
+            color: var(--champagne-gold);
+            letter-spacing: 5px;
+            margin-bottom: 32px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .event-buttons-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .portal-event-btn {
+            background: #FAF7F2;
+            border: 1px solid var(--champagne-gold);
+            color: var(--text-main);
+            padding: 18px 20px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-family: 'Cormorant Garamond', serif;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 4px 12px rgba(184, 155, 106, 0.08);
+            text-transform: uppercase;
+        }
+
+        .portal-event-btn:hover, .portal-event-btn:active {
+            background: var(--champagne-gold);
+            color: #FAF7F2;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(184, 155, 106, 0.35);
+        }
+
+        .portal-event-btn:hover .sub-date, .portal-event-btn:active .sub-date {
+            color: rgba(250, 247, 242, 0.9);
+        }
+
+        .portal-event-btn .sub-date {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: var(--champagne-gold);
+            font-family: 'Cormorant Garamond', serif;
+            transition: color 0.3s ease;
+        }
     </style>
 </head>
 
 <body>
 
+    <!-- 🌟 ป๊อปอัปหน้าต่างเลือกงาน "Photo Gallery By Piwat" -->
+    <div id="portalModal" class="portal-modal">
+        <div class="portal-box">
+            <h2 class="portal-main-title">Photo Gallery</h2>
+            <div class="portal-subtitle">BY PIWAT</div>
+            <div class="gold-divider" style="margin-bottom: 28px;"></div>
+            <div class="event-buttons-list" id="eventButtonsList">
+                <!-- รายชื่อปุ่มงานจะถูกสร้างอัตโนมัติจาก JS -->
+            </div>
+        </div>
+    </div>
+
     <header>
+        <button class="switch-event-btn" onclick="openPortalModal()">🔄 เลือกงาน</button>
         <div class="live-badge">
             <span class="pulsing-dot"></span>LIVE GALLERY
         </div>
-        <h1 class="couple-title">Pui & Flook</h1>
-        <div class="event-date">01 · 11 · 2026</div>
+        <h1 class="couple-title" id="coupleTitle">Pui & Flook</h1>
+        <div class="event-date" id="eventDate">01 · 11 · 2026</div>
         <div class="gold-divider"></div>
         
         <!-- ปุ่มสลับโหมดแสดงผล -->
@@ -450,34 +583,98 @@
     </div>
 
     <script>
+        // ==========================================
+        // ⚙️ คลังข้อมูลงานทั้งหมด (EVENTS CONFIG)
+        // ==========================================
+        const EVENTS_CONFIG = {
+            'pui-flook': {
+                title: 'Pui & Flook',
+                date: '01 · 11 · 2026',
+                folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK'
+            },/*
+            'event-b': {
+                title: 'test event B',
+                date: '1 · 11 · 2026',
+                folderId: 'YOUR_NEW_FOLDER_ID_B'
+            },
+            */
+            'event-c': {
+                title: 'test event C',
+                date: '1 · 11 · 2026',
+                folderId: 'YOUR_NEW_FOLDER_ID_C'
+            }
+        };
+
         const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
-        const FOLDER_ID = '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK';
+        let currentEventKey = '';
+        let FOLDER_ID = '';
+        let STORAGE_KEY = '';
 
         const imageCache = new Map();
-        let currentFilter = 'all'; // 'all' หรือ 'favorites'
+        let currentFilter = 'all';
 
-        // ดึงข้อมูลรูปที่ถูกใจจาก LocalStorage ในเครื่อง
+        // สร้างปุ่มเลือกระดับงานในป๊อปอัปอัตโนมัติ
+        function renderPortalButtons() {
+            const list = document.getElementById('eventButtonsList');
+            list.innerHTML = '';
+            
+            Object.keys(EVENTS_CONFIG).forEach(key => {
+                const ev = EVENTS_CONFIG[key];
+                const btn = document.createElement('button');
+                btn.className = 'portal-event-btn';
+                btn.innerHTML = `
+                    <span>${ev.title}</span>
+                    <span class="sub-date">${ev.date}</span>
+                `;
+                btn.onclick = () => selectEvent(key);
+                list.appendChild(btn);
+            });
+        }
+
+        function openPortalModal() {
+            document.getElementById('portalModal').classList.remove('hidden');
+        }
+
+        function selectEvent(key) {
+            currentEventKey = key;
+            const currentEvent = EVENTS_CONFIG[key];
+
+            FOLDER_ID = currentEvent.folderId;
+            STORAGE_KEY = `favs_${key}`;
+
+            document.getElementById('coupleTitle').textContent = currentEvent.title;
+            document.getElementById('eventDate').textContent = currentEvent.date;
+            document.title = `${currentEvent.title} — Live Gallery`;
+
+            // ล้างรูปเดิมในหน้าเว็บออก แล้วโหลดรูปงานใหม่
+            document.getElementById('gallery').innerHTML = '';
+            document.getElementById('portalModal').classList.add('hidden');
+
+            updateFavCount();
+            fetchPhotos();
+        }
+
         function getFavorites() {
             try {
-                return new Set(JSON.parse(localStorage.getItem('pui_flook_favs') || '[]'));
+                return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
             } catch (e) {
                 return new Set();
             }
         }
 
-        // บันทึกรูปที่ถูกใจลง LocalStorage ในเครื่อง
         function saveFavorites(favSet) {
-            localStorage.setItem('pui_flook_favs', JSON.stringify([...favSet]));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([...favSet]));
             updateFavCount();
         }
 
         function updateFavCount() {
+            if (!STORAGE_KEY) return;
             const favs = getFavorites();
             document.getElementById('favCount').textContent = favs.size;
         }
 
         function toggleLike(event, fileId) {
-            event.stopPropagation(); // ป้องกันไม่ให้เปิด Modal
+            event.stopPropagation();
             const favs = getFavorites();
             const btn = event.currentTarget;
 
@@ -553,7 +750,7 @@
         }
 
         async function fetchPhotos() {
-            if (document.getElementById('photoModal').classList.contains('active')) return;
+            if (!FOLDER_ID || document.getElementById('photoModal').classList.contains('active')) return;
 
             const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+trashed=false&orderBy=createdTime+desc&fields=files(id,name,createdTime)&key=${API_KEY}`;
             try {
@@ -635,8 +832,18 @@
         function closeModal(event) { if (event.target.classList.contains('modal')) hideModal(); }
 
         window.addEventListener('DOMContentLoaded', () => {
-            updateFavCount();
-            fetchPhotos();
+            renderPortalButtons();
+
+            // เช็กว่ามีระบุ ?event= ใน URL ไหม ถ้ามีให้เข้างานนั้นเลย ถ้าไม่มีเปิดหน้าต่างเลือกงาน
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramEvent = urlParams.get('event');
+
+            if (paramEvent && EVENTS_CONFIG[paramEvent]) {
+                selectEvent(paramEvent);
+            } else {
+                openPortalModal();
+            }
+
             setInterval(fetchPhotos, 6000);
         });
     </script>
