@@ -883,7 +883,7 @@
             }
         }
 
-        /* ฟังก์ชันดาวน์โหลดรูปภาพที่ผ่านการแก้ไขแล้ว ข้ามปัญหา CORS ชัวร์ 100% */
+        /* ฟังก์ชันดาวน์โหลดแบบไม่เปลี่ยนหน้า และไม่ขึ้นแจ้งเตือนบน Android */
         function downloadCurrentPhoto(event) {
             if (event) {
                 event.stopPropagation();
@@ -892,17 +892,17 @@
 
             if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
             const photo = currentPhotoList[currentPhotoIndex];
-            
             const directDownloadUrl = `https://www.googleapis.com/drive/v3/files/${photo.id}?alt=media&key=${API_KEY}`;
             
-            const link = document.createElement('a');
-            link.href = directDownloadUrl;
-            link.target = '_blank';
-            link.download = `Photo_${photo.num || 'Piwat'}.jpg`;
+            let iframe = document.getElementById('hiddenDownloadIframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'hiddenDownloadIframe';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
             
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            iframe.src = directDownloadUrl;
         }
 
         function setFilter(filterMode) {
