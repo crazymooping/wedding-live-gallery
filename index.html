@@ -721,10 +721,10 @@
         <div class="modal-actions" onclick="event.stopPropagation()">
             <div class="modal-info-row">
                 <button class="modal-like-btn" id="modalLikeBtn" onclick="toggleModalLike(event)">🤍</button>
-                <button class="modal-download-btn" id="modalDownloadBtn" onclick="downloadCurrentPhoto(event)">📥 ดาวน์โหลดรูปภาพสำหรับ andriod</button>
+                <button class="modal-download-btn" id="modalDownloadBtn" onclick="downloadCurrentPhoto(event)">📥 ดาวน์โหลด for Android</button>
                 <div class="modal-photo-num" id="modalPhotoNum">NO. ---</div>
             </div>
-            <span class="save-tip">💡 สำรหับ ios กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
+            <span class="save-tip">💡 สำหรับ Ios กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
         </div>
     </div>
 
@@ -883,7 +883,7 @@
             }
         }
 
-        /* ฟังก์ชันดาวน์โหลดแก้เรื่อง CORS และปัญหาค้างแบบ 100% */
+        /* ฟังก์ชันดาวน์โหลดรูปภาพที่ผ่านการแก้ไขแล้ว ข้ามปัญหา CORS ชัวร์ 100% */
         function downloadCurrentPhoto(event) {
             if (event) {
                 event.stopPropagation();
@@ -893,11 +893,10 @@
             if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
             const photo = currentPhotoList[currentPhotoIndex];
             
-            // ใช้ Google Usercontent CDN Direct Media Link เพื่อหลีกเลี่ยง CORS บล็อก
-            const downloadUrl = `https://lh3.googleusercontent.com/d/${photo.id}=s0`;
+            const directDownloadUrl = `https://www.googleapis.com/drive/v3/files/${photo.id}?alt=media&key=${API_KEY}`;
             
             const link = document.createElement('a');
-            link.href = downloadUrl;
+            link.href = directDownloadUrl;
             link.target = '_blank';
             link.download = `Photo_${photo.num || 'Piwat'}.jpg`;
             
