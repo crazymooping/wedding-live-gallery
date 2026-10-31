@@ -724,7 +724,7 @@
                 <button class="modal-download-btn" id="modalDownloadBtn" onclick="downloadCurrentPhoto(event)">📥 ดาวน์โหลด</button>
                 <div class="modal-photo-num" id="modalPhotoNum">NO. ---</div>
             </div>
-            <span class="save-tip">💡 สำหรับ iphone กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
+            <span class="save-tip">💡 กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
         </div>
     </div>
 
@@ -883,8 +883,8 @@
             }
         }
 
-        /* ฟังก์ชันดาวน์โหลดใหม่: แปลงเป็น Blob URL ช่วยให้ Android ดาวน์โหลดไฟล์ตรงๆ ไม่ผ่านเด้งแอป Google */
-        async function downloadCurrentPhoto(event) {
+        /* ฟังก์ชันดาวน์โหลดแก้เรื่อง CORS และปัญหาค้างแบบ 100% */
+        function downloadCurrentPhoto(event) {
             if (event) {
                 event.stopPropagation();
                 event.preventDefault();
@@ -893,39 +893,17 @@
             if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
             const photo = currentPhotoList[currentPhotoIndex];
             
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            const directDownloadUrl = `https://www.googleapis.com/drive/v3/files/${photo.id}?alt=media&key=${API_KEY}`;
-            const fileName = `Photo_${photo.num || 'Piwat'}.jpg`;
-
-            if (isIOS) {
-                // สำหรับ iOS เปิดแท็บใหม่เพื่อให้ Safari / iOS แสดงหน้าต่างจัดการรูปภาพ
-                window.open(directDownloadUrl, '_blank');
-            } else {
-                // สำหรับ Android และ Desktop ใช้ fetch แปลงเป็น Blob โหลดเก็บลงเครื่องทันทีโดยไม่เปลี่ยนหน้า
-                const btn = document.getElementById('modalDownloadBtn');
-                const originalText = btn ? btn.innerHTML : '📥 ดาวน์โหลด';
-                if (btn) btn.innerHTML = '⏳ กำลังโหลด...';
-
-                try {
-                    const response = await fetch(directDownloadUrl);
-                    const blob = await response.blob();
-                    const blobUrl = URL.createObjectURL(blob);
-
-                    const link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-                } catch (err) {
-                    // หากเกิดข้อผิดพลาด ให้เปิดลิงก์ดาวน์โหลดสำรอง
-                    window.open(directDownloadUrl, '_blank');
-                } finally {
-                    if (btn) btn.innerHTML = originalText;
-                }
-            }
+            // ใช้ Google Usercontent CDN Direct Media Link เพื่อหลีกเลี่ยง CORS บล็อก
+            const downloadUrl = `https://lh3.googleusercontent.com/d/${photo.id}=s0`;
+            
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.target = '_blank';
+            link.download = `Photo_${photo.num || 'Piwat'}.jpg`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function setFilter(filterMode) {
