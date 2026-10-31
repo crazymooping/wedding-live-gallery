@@ -883,7 +883,7 @@
             }
         }
 
-        /* ฟังก์ชันดาวน์โหลดแบบไม่เปลี่ยนหน้า และไม่ขึ้นแจ้งเตือนบน Android */
+        /* ฟังก์ชันดาวน์โหลดรองรับทั้ง iOS และ Android */
         function downloadCurrentPhoto(event) {
             if (event) {
                 event.stopPropagation();
@@ -894,15 +894,23 @@
             const photo = currentPhotoList[currentPhotoIndex];
             const directDownloadUrl = `https://www.googleapis.com/drive/v3/files/${photo.id}?alt=media&key=${API_KEY}`;
             
-            let iframe = document.getElementById('hiddenDownloadIframe');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = 'hiddenDownloadIframe';
-                iframe.style.display = 'none';
-                document.body.appendChild(iframe);
+            // เช็คว่าเป็น iOS (iPhone/iPad) หรือไม่
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            if (isIOS) {
+                // ถ้าเป็น iOS เปิดแท็บใหม่เพื่อส่งรูปภาพให้ Safari จัดการ
+                window.open(directDownloadUrl, '_blank');
+            } else {
+                // ถ้าเป็น Android หรือ PC ใช้ iframe เพื่อดาวน์โหลดเบื้องหลังทันทีโดยไม่เปลี่ยนหน้า
+                let iframe = document.getElementById('hiddenDownloadIframe');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'hiddenDownloadIframe';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+                iframe.src = directDownloadUrl;
             }
-            
-            iframe.src = directDownloadUrl;
         }
 
         function setFilter(filterMode) {
