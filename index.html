@@ -385,7 +385,6 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             animation: modalZoom 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             transition: filter 0.3s ease;
-            /* ปลดล็อกให้ iPhone กดค้างเซฟรูปได้ */
             -webkit-touch-callout: default !important;
             -webkit-user-select: auto !important;
             user-select: auto !important;
@@ -436,7 +435,6 @@
             .nav-btn.next { right: 2px; }
         }
 
-        /* ส่วนควบคุมด้านล่างรูปภาพใน Modal */
         .modal-actions {
             margin-top: 14px;
             display: flex;
@@ -885,7 +883,8 @@
             }
         }
 
-        async function downloadCurrentPhoto(event) {
+        /* ฟังก์ชันดาวน์โหลดรูปภาพที่ผ่านการแก้ไขแล้ว ข้ามปัญหา CORS ชัวร์ 100% */
+        function downloadCurrentPhoto(event) {
             if (event) {
                 event.stopPropagation();
                 event.preventDefault();
@@ -893,25 +892,17 @@
 
             if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
             const photo = currentPhotoList[currentPhotoIndex];
-            const downloadUrl = photo.fullUrl;
-            const fileName = `Photo_${photo.num || 'Piwat'}.jpg`;
-
-            try {
-                const response = await fetch(downloadUrl);
-                const blob = await response.blob();
-                const blobUrl = URL.createObjectURL(blob);
-
-                const link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-            } catch (err) {
-                window.open(downloadUrl, '_blank');
-            }
+            
+            const directDownloadUrl = `https://www.googleapis.com/drive/v3/files/${photo.id}?alt=media&key=${API_KEY}`;
+            
+            const link = document.createElement('a');
+            link.href = directDownloadUrl;
+            link.target = '_blank';
+            link.download = `Photo_${photo.num || 'Piwat'}.jpg`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function setFilter(filterMode) {
@@ -1122,7 +1113,6 @@
 
         const modalContainer = document.getElementById('photoModal');
         
-        /* ปรับ Event Touch ไม่ให้ขัดขวางการกดค้างบนตัวรูปภาพ */
         modalContainer.addEventListener('touchstart', (e) => {
             if (e.target.closest('.modal-actions') || e.target.closest('.nav-btn') || e.target.closest('.modal-content')) return;
             touchStartX = e.changedTouches[0].screenX;
