@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Photo Gallery by Piwat</title>
+    <!-- โหลด Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Noto+Serif+Thai:wght@300;400&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #FAF7F2;
+            --text-main: #3E2F2B;
+            --text-muted: #8C7A70;
+            --champagne-gold: #B89B6A;
+            --gold-light: rgba(184, 155, 106, 0.25);
+            --heart-red: #E74C3C;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Noto Serif Thai', -apple-system, serif;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            touch-action: pan-x;
+        }
+
+        /* Header */
+        header {
+            flex-shrink: 0;
+            background-color: rgba(250, 247, 242, 0.96);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 14px 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid rgba(184, 155, 106, 0.15);
+            position: relative;
+        }
+
+        .live-badge {
+            display: inline-block;
+            font-size: 10px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--champagne-gold);
+            font-weight: 500;
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+
+        .pulsing-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: var(--champagne-gold);
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 8px var(--champagne-gold); }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+
+        h1.couple-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(28px, 4.2vw, 48px);
+            font-weight: 400;
+            letter-spacing: 6px;
+            line-height: 1.05;
+            color: var(--text-main);
+            text-transform: uppercase;
+        }
+
+        .event-date {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(11px, 1.5vw, 16px);
+            letter-spacing: 5px;
+            color: var(--champagne-gold);
+            margin-top: 3px;
+            font-weight: 400;
+        }
+
+        .gold-divider {
+            width: clamp(35px, 5vw, 70px);
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--champagne-gold), transparent);
+            margin: 6px auto;
+        }
+
+        .switch-event-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: transparent;
+            border: 1px solid var(--champagne-gold);
+            color: var(--champagne-gold);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.25s ease;
+        }
+
+        .switch-event-btn:hover {
+            background: var(--champagne-gold);
+            color: #FAF7F2;
+        }
+
+        .filter-container {
+            margin-top: 6px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--champagne-gold);
+            color: var(--text-main);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-family: 'Noto Serif Thai', serif;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-btn.active {
+            background: var(--champagne-gold);
+            color: #FAF7F2;
+            font-weight: 400;
+            box-shadow: 0 2px 8px rgba(184, 155, 106, 0.3);
+        }
+
+        .scroll-hint {
+            font-size: clamp(9px, 1vw, 11px);
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .gallery-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 0;
+            overflow: hidden;
+            width: 100%;
+            position: relative;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-rows: repeat(2, calc((100dvh - 280px) / 2));
+            grid-auto-flow: column;
+            grid-auto-columns: calc((100dvh - 280px) / 2);
+            gap: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0 16px;
+            width: 100%;
+            height: 100%;
+            align-content: center;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--champagne-gold) transparent;
+            touch-action: pan-x;
+        }
+
+        @media (min-width: 768px) {
+            header { padding: 16px 16px 8px; }
+            .gallery-grid {
+                grid-template-rows: repeat(2, calc((100dvh - 330px) / 2));
+                grid-auto-columns: calc((100dvh - 330px) / 2);
+                gap: 14px;
+                padding: 0 28px;
+            }
+        }
+
+        .gallery-grid::-webkit-scrollbar {
+            height: 4px;
+        }
+        .gallery-grid::-webkit-scrollbar-thumb {
+            background: var(--champagne-gold);
+            border-radius: 10px;
+        }
+
+        .photo-item {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 6px;
+            background-color: #EFECE6;
+            cursor: pointer;
+            border: 1px solid var(--gold-light);
+            box-shadow: 0 4px 14px rgba(62, 47, 43, 0.05);
+            transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+            animation: fadeIn 0.5s ease forward;
+            scroll-snap-align: start;
+            will-change: transform;
+        }
+
+        .photo-item.hidden {
+            display: none !important;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .photo-item:hover, .photo-item:active {
+            transform: scale(0.98);
+            border-color: var(--champagne-gold);
+            box-shadow: 0 6px 18px rgba(184, 155, 106, 0.2);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .photo-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .like-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(24, 18, 16, 0.45);
+            border: none;
+            color: #FAF7F2;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transition: all 0.25s ease;
+            z-index: 10;
+            font-size: 13px;
+        }
+
+        .like-btn:active {
+            transform: scale(1.2);
+        }
+
+        .like-btn.liked {
+            background: rgba(231, 76, 60, 0.85);
+            color: #FFFFFF;
+        }
+
+        .photo-num-badge {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            background: rgba(24, 18, 16, 0.75);
+            color: var(--champagne-gold);
+            font-size: clamp(9px, 1.1vw, 11px);
+            font-weight: 500;
+            padding: 2px 7px;
+            border-radius: 4px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            pointer-events: none;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(184, 155, 106, 0.4);
+            z-index: 9;
+        }
+
+        .time-badge {
+            position: absolute;
+            bottom: 6px;
+            left: 6px;
+            background: rgba(24, 18, 16, 0.68);
+            color: #FAF7F2;
+            font-size: clamp(8px, 1vw, 10px);
+            font-weight: 300;
+            padding: 2px 6px;
+            border-radius: 3px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            pointer-events: none;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .empty-state {
+            display: none;
+            position: absolute;
+            color: var(--text-muted);
+            font-size: 13px;
+            text-align: center;
+            font-weight: 300;
+            pointer-events: none;
+        }
+
+        footer {
+            flex-shrink: 0;
+            text-align: center;
+            padding: 10px 12px 18px;
+        }
+
+        .thank-you-msg {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: clamp(16px, 2.4vw, 24px);
+            letter-spacing: 2px;
+            color: var(--champagne-gold);
+            font-weight: 500;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(18, 14, 13, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 16px;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+            touch-action: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .modal-content {
+            max-width: 92%;
+            max-height: 72vh;
+            border-radius: 6px;
+            object-fit: contain;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: modalZoom 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: filter 0.3s ease;
+            -webkit-touch-callout: default !important;
+            -webkit-user-select: auto !important;
+            user-select: auto !important;
+        }
+
+        @keyframes modalZoom {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(24, 18, 16, 0.7);
+            border: 1px solid var(--champagne-gold);
+            color: #FAF7F2;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            z-index: 1020;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.25s ease;
+            user-select: none;
+        }
+
+        .nav-btn:hover {
+            background: var(--champagne-gold);
+            color: #120E0D;
+        }
+
+        .nav-btn.prev { left: 4px; }
+        .nav-btn.next { right: 4px; }
+
+        @media (max-width: 600px) {
+            .nav-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 15px;
+            }
+            .nav-btn.prev { left: 2px; }
+            .nav-btn.next { right: 2px; }
+        }
+
+        .modal-actions {
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            z-index: 1040;
+        }
+
+        .modal-info-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .modal-like-btn {
+            background: rgba(24, 18, 16, 0.6);
+            border: 1px solid var(--champagne-gold);
+            color: #FAF7F2;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.25s ease;
+            font-size: 15px;
+            z-index: 1050;
+            touch-action: manipulation;
+        }
+
+        .modal-like-btn.liked {
+            background: rgba(231, 76, 60, 0.9);
+            border-color: #E74C3C;
+            color: #FFFFFF;
+        }
+
+        .modal-download-btn {
+            background: rgba(24, 18, 16, 0.6);
+            border: 1px solid var(--champagne-gold);
+            color: var(--champagne-gold);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: 'Noto Serif Thai', serif;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 1050;
+        }
+
+        .modal-download-btn:hover, .modal-download-btn:active {
+            background: var(--champagne-gold);
+            color: #FAF7F2;
+            transform: translateY(-1px);
+        }
+
+        .modal-photo-num {
+            font-size: 13px;
+            color: var(--champagne-gold);
+            font-weight: 500;
+            letter-spacing: 1px;
+            padding: 4px 8px;
+            background: rgba(24, 18, 16, 0.4);
+            border-radius: 6px;
+            border: 1px solid rgba(184, 155, 106, 0.3);
+        }
+
+        .save-tip {
+            font-size: 12px;
+            color: rgba(250, 247, 242, 0.85);
+            font-weight: 300;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            color: rgba(250, 247, 242, 0.6);
+            font-size: 32px;
+            font-weight: 200;
+            cursor: pointer;
+            transition: color 0.2s;
+            z-index: 1030;
+        }
+
+        .close-btn:hover {
+            color: #FAF7F2;
+        }
+
+        .portal-modal {
+            display: flex;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(18, 14, 13, 0.45);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 1;
+            transition: opacity 0.4s ease;
+        }
+
+        .portal-modal.hidden {
+            opacity: 0;
+            pointer-events: none;
+            display: none;
+        }
+
+        .portal-box {
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            background: rgba(250, 247, 242, 0.92);
+            padding: 36px 24px;
+            border-radius: 24px;
+            border: 1px solid rgba(184, 155, 106, 0.35);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15), 0 0 30px rgba(184, 155, 106, 0.15);
+        }
+
+        .portal-main-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(28px, 5vw, 36px);
+            color: var(--text-main);
+            letter-spacing: 6px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .portal-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 11px;
+            color: var(--champagne-gold);
+            letter-spacing: 5px;
+            margin-bottom: 22px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .event-buttons-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .portal-event-btn {
+            position: relative;
+            width: 100%;
+            padding: 20px 16px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #FAF7F2 0%, #F3EDE2 100%);
+            border: 1px solid rgba(184, 155, 106, 0.4);
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 4px 15px rgba(62, 47, 43, 0.04);
+        }
+
+        .portal-event-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 50%;
+            height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            transform: rotate(30deg);
+            transition: all 0.6s ease;
+        }
+
+        .portal-event-btn:hover::after {
+            left: 130%;
+        }
+
+        .portal-event-btn:hover, .portal-event-btn:active {
+            transform: translateY(-3px);
+            border-color: var(--champagne-gold);
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F2E7 100%);
+            box-shadow: 0 10px 25px rgba(184, 155, 106, 0.25);
+        }
+
+        .portal-event-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .portal-event-icon {
+            font-size: 11px;
+            color: var(--champagne-gold);
+            margin-bottom: 4px;
+            letter-spacing: 2px;
+            opacity: 0.85;
+        }
+
+        .portal-event-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 24px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .portal-event-date {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 13px;
+            letter-spacing: 3px;
+            color: var(--champagne-gold);
+            margin-top: 2px;
+            font-weight: 400;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="portalModal" class="portal-modal">
+        <div class="portal-box">
+            <h2 class="portal-main-title">Photo Gallery</h2>
+            <div class="portal-subtitle">BY PIWAT</div>
+            <div class="gold-divider" style="margin-bottom: 20px;"></div>
+            <div class="event-buttons-list" id="eventButtonsList"></div>
+        </div>
+    </div>
+
+    <header>
+        <button class="switch-event-btn" onclick="openPortalModal()">🔄 เลือกงาน</button>
+        <div class="live-badge">
+            <span class="pulsing-dot"></span>LIVE GALLERY
+        </div>
+        <h1 class="couple-title" id="coupleTitle">Pui & Flook</h1>
+        <div class="event-date" id="eventDate">01 · 11 · 2026</div>
+        <div class="gold-divider"></div>
+        
+        <div class="filter-container">
+            <button class="filter-btn active" id="btnAll" onclick="setFilter('all')">📷 แสดงทั้งหมด</button>
+            <button class="filter-btn" id="btnFavorites" onclick="setFilter('favorites')">❤️ รูปที่ถูกใจ (<span id="favCount">0</span>)</button>
+        </div>
+        
+        <div class="scroll-hint">👈 เลื่อนซ้าย-ขวาเพื่อชมรูปภาพ 👉</div>
+    </header>
+
+    <div class="gallery-container">
+        <div class="gallery-grid" id="gallery"></div>
+        <div class="empty-state" id="emptyState">คุณยังไม่ได้กดใจรูปภาพใดๆ 🤍</div>
+    </div>
+
+    <footer>
+        <div class="thank-you-msg">Thank you for being part of our special day</div>
+    </footer>
+
+    <div id="photoModal" class="modal" onclick="closeModal(event)">
+        <span class="close-btn" onclick="hideModal()">&times;</span>
+        
+        <div class="modal-wrapper" onclick="event.stopPropagation()">
+            <button class="nav-btn prev" onclick="navigatePhoto(-1)">❮</button>
+            <img class="modal-content" id="modalImg" src="" alt="Preview">
+            <button class="nav-btn next" onclick="navigatePhoto(1)">❯</button>
+        </div>
+
+        <div class="modal-actions" onclick="event.stopPropagation()">
+            <div class="modal-info-row">
+                <button class="modal-like-btn" id="modalLikeBtn" onclick="toggleModalLike(event)">🤍</button>
+                <button class="modal-download-btn" id="modalDownloadBtn" onclick="downloadCurrentPhoto(event)">📥 ดาวน์โหลด for Android</button>
+                <div class="modal-photo-num" id="modalPhotoNum">NO. ---</div>
+            </div>
+            <span class="save-tip">💡 สำหรับ Ios กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
+        </div>
+    </div>
+
+    <script>
+        const EVENTS_CONFIG = {
+            'pui-flook': {
+                title: 'Pui & Flook',
+                date: '01 · 11 · 2026',
+                folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK',
+            }
+        };
+
+        const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
+        let currentEventKey = '';
+        let FOLDER_ID = '';
+        let STORAGE_KEY = '';
+
+        const imageCache = new Map();
+        let currentFilter = 'all';
+
+        let currentPhotoList = [];
+        let currentPhotoIndex = -1;
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        function extractPhotoNumber(filename) {
+            if (!filename) return '';
+            const cleanName = filename.replace(/\.[^/.]+$/, "");
+            const match = cleanName.match(/(\d+(?:-\d+)*)$/);
+            if (match && match[1]) {
+                return match[1];
+            }
+            return cleanName;
+        }
+
+        function renderPortalButtons() {
+            const list = document.getElementById('eventButtonsList');
+            list.innerHTML = '';
+            
+            Object.keys(EVENTS_CONFIG).forEach(key => {
+                const ev = EVENTS_CONFIG[key];
+                const btn = document.createElement('div');
+                btn.className = 'portal-event-btn';
+
+                btn.innerHTML = `
+                    <div class="portal-event-content">
+                        <div class="portal-event-icon">✦  LIVE GALLERY  ✦</div>
+                        <div class="portal-event-title">${ev.title}</div>
+                        <div class="portal-event-date">${ev.date}</div>
+                    </div>
+                `;
+                btn.onclick = () => selectEvent(key);
+                list.appendChild(btn);
+            });
+        }
+
+        function openPortalModal() {
+            document.getElementById('portalModal').classList.remove('hidden');
+        }
+
+        function selectEvent(key) {
+            currentEventKey = key;
+            const currentEvent = EVENTS_CONFIG[key];
+
+            FOLDER_ID = currentEvent.folderId;
+            STORAGE_KEY = `favs_${key}`;
+
+            document.getElementById('coupleTitle').textContent = currentEvent.title;
+            document.getElementById('eventDate').textContent = currentEvent.date;
+            document.title = `${currentEvent.title} — Live Gallery`;
+
+            document.getElementById('gallery').innerHTML = '';
+            document.getElementById('portalModal').classList.add('hidden');
+
+            updateFavCount();
+            fetchPhotos();
+        }
+
+        function getFavorites() {
+            try {
+                return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+            } catch (e) {
+                return new Set();
+            }
+        }
+
+        // ล้างหัวใจที่ค้างจากรูปที่ไม่มีใน Drive แล้ว (เช่น รูปทดสอบที่ลบ/อัปใหม่) ไม่งั้นตัวเลขจะนับเกิน
+        function pruneFavorites(validIds) {
+            const favs = getFavorites();
+            let changed = false;
+            favs.forEach(id => {
+                if (!validIds.has(id)) { favs.delete(id); changed = true; }
+            });
+            if (changed) saveFavorites(favs); else updateFavCount();
+        }
+
+        function saveFavorites(favSet) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([...favSet]));
+            updateFavCount();
+        }
+
+        function updateFavCount() {
+            if (!STORAGE_KEY) return;
+            const favs = getFavorites();
+            document.getElementById('favCount').textContent = favs.size;
+        }
+
+        function syncCardLikeBtn(fileId, isLiked) {
+            const cardItem = document.querySelector(`.photo-item[data-id="${fileId}"]`);
+            if (cardItem) {
+                const btn = cardItem.querySelector('.like-btn');
+                if (btn) {
+                    if (isLiked) {
+                        btn.classList.add('liked');
+                        btn.innerHTML = '❤️';
+                    } else {
+                        btn.classList.remove('liked');
+                        btn.innerHTML = '🤍';
+                    }
+                }
+            }
+        }
+
+        function toggleLike(event, fileId) {
+            if (event) event.stopPropagation();
+            const favs = getFavorites();
+            let isLiked = false;
+
+            if (favs.has(fileId)) {
+                favs.delete(fileId);
+                isLiked = false;
+            } else {
+                favs.add(fileId);
+                isLiked = true;
+            }
+
+            saveFavorites(favs);
+            syncCardLikeBtn(fileId, isLiked);
+            applyFilter();
+            return isLiked;
+        }
+
+        function toggleModalLike(event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            
+            if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
+            const photo = currentPhotoList[currentPhotoIndex];
+            
+            const isLiked = toggleLike(null, photo.id);
+            updateModalLikeBtnState(isLiked);
+        }
+
+        function updateModalLikeBtnState(isLiked) {
+            const modalLikeBtn = document.getElementById('modalLikeBtn');
+            if (modalLikeBtn) {
+                if (isLiked) {
+                    modalLikeBtn.classList.add('liked');
+                    modalLikeBtn.innerHTML = '❤️';
+                } else {
+                    modalLikeBtn.classList.remove('liked');
+                    modalLikeBtn.innerHTML = '🤍';
+                }
+            }
+        }
+
+        /* ฟังก์ชันดาวน์โหลดรูปภาพที่ผ่านการแก้ไขแล้ว ข้ามปัญหา CORS ชัวร์ 100% */
+        function downloadCurrentPhoto(event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+
+            if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
+            const photo = currentPhotoList[currentPhotoIndex];
+            
+            const directDownloadUrl = `https://www.googleapis.com/drive/v3/files/${photo.id}?alt=media&key=${API_KEY}`;
+            
+            const link = document.createElement('a');
+            link.href = directDownloadUrl;
+            link.target = '_blank';
+            link.download = `Photo_${photo.num || 'Piwat'}.jpg`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function setFilter(filterMode) {
+            currentFilter = filterMode;
+            document.getElementById('btnAll').classList.toggle('active', filterMode === 'all');
+            document.getElementById('btnFavorites').classList.toggle('active', filterMode === 'favorites');
+            applyFilter();
+        }
+
+        function applyFilter() {
+            const favs = getFavorites();
+            const items = document.querySelectorAll('.photo-item');
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                const id = item.getAttribute('data-id');
+                if (currentFilter === 'all') {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    if (favs.has(id)) {
+                        item.classList.remove('hidden');
+                        visibleCount++;
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                }
+            });
+
+            const emptyState = document.getElementById('emptyState');
+            if (currentFilter === 'favorites' && visibleCount === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+            }
+        }
+
+        function formatTime(isoString) {
+            if (!isoString) return '';
+            const date = new Date(isoString);
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes} น.`;
+        }
+
+        function preloadHighRes(fastPreviewUrl, fullUrl) {
+            if (!imageCache.has(fullUrl)) {
+                const img = new Image();
+                img.src = fastPreviewUrl;
+                const fullImg = new Image();
+                fullImg.src = fullUrl;
+                imageCache.set(fullUrl, true);
+            }
+        }
+
+        function getBaseFileName(name) {
+            return name.replace(/\s*\(\d+\)\s*/g, '').replace(/_copy\d*/gi, '').toLowerCase();
+        }
+
+        async function fetchPhotos() {
+            if (!FOLDER_ID || document.getElementById('photoModal').classList.contains('active')) return;
+
+            try {
+                // ดึงให้ครบทุกหน้า (Drive ตอบทีละ 100 ไฟล์ถ้าไม่ระบุ pageSize)
+                let allFiles = [];
+                let fetchOk = true;
+                let pageToken = '';
+                do {
+                    const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+trashed=false&orderBy=createdTime+desc&pageSize=1000&fields=nextPageToken,files(id,name,createdTime)` +
+                        (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '') + `&key=${API_KEY}`;
+                    const response = await fetch(url);
+                    const page = await response.json();
+                    if (page.error) { console.error('Drive API error:', page.error); fetchOk = false; break; }
+                    allFiles = allFiles.concat(page.files || []);
+                    pageToken = page.nextPageToken || '';
+                } while (pageToken);
+
+                const data = { files: allFiles };
+                if (fetchOk) pruneFavorites(new Set(allFiles.map(f => f.id)));
+                const gallery = document.getElementById('gallery');
+                const favs = getFavorites();
+
+                if (data.files && data.files.length > 0) {
+                    const existingIds = new Set([...document.querySelectorAll('.photo-item')].map(item => item.getAttribute('data-id')));
+                    const existingNames = new Set([...document.querySelectorAll('.photo-item img')].map(img => img.getAttribute('data-clean-name')));
+
+                    const fragment = document.createDocumentFragment();
+                    let hasNewPhoto = false;
+
+                    data.files.forEach(file => {
+                        const cleanName = getBaseFileName(file.name);
+
+                        if (!existingIds.has(file.id) && !existingNames.has(cleanName)) {
+                            hasNewPhoto = true;
+                            existingIds.add(file.id);
+                            existingNames.add(cleanName);
+
+                            const item = document.createElement('div');
+                            item.className = 'photo-item';
+                            item.setAttribute('data-id', file.id);
+
+                            const photoNum = extractPhotoNumber(file.name);
+                            const thumbUrl = `https://lh3.googleusercontent.com/d/${file.id}=s400`;
+                            const fastPreviewUrl = `https://lh3.googleusercontent.com/d/${file.id}=s1600`;
+                            const fullUrl = `https://lh3.googleusercontent.com/d/${file.id}=s0`;
+                            const timeText = formatTime(file.createdTime);
+                            const isLiked = favs.has(file.id);
+
+                            item.innerHTML = `
+                                <div class="photo-num-badge">NO. ${photoNum}</div>
+                                <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(event, '${file.id}')">
+                                    ${isLiked ? '❤️' : '🤍'}
+                                </button>
+                                <img src="${thumbUrl}" alt="${file.name}" data-clean-name="${cleanName}" data-photo-num="${photoNum}" crossorigin="anonymous" loading="lazy" decoding="async" 
+                                     ontouchstart="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
+                                     onmouseenter="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
+                                     onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
+                                <div class="time-badge">🕒 ${timeText}</div>
+                            `;
+                            fragment.appendChild(item);
+                        }
+                    });
+
+                    if (hasNewPhoto) {
+                        gallery.insertBefore(fragment, gallery.firstChild);
+                        applyFilter();
+                    }
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function openModal(fastPreviewUrl, fullUrl, fileId) {
+            const visibleItems = [...document.querySelectorAll('.photo-item:not(.hidden)')];
+            currentPhotoList = visibleItems.map(item => {
+                const id = item.getAttribute('data-id');
+                const imgEl = item.querySelector('img');
+                const num = imgEl ? imgEl.getAttribute('data-photo-num') : '';
+                return {
+                    id: id,
+                    num: num,
+                    thumbUrl: `https://lh3.googleusercontent.com/d/${id}=s400`,
+                    fastPreviewUrl: `https://lh3.googleusercontent.com/d/${id}=s1600`,
+                    fullUrl: `https://lh3.googleusercontent.com/d/${id}=s0`
+                };
+            });
+
+            currentPhotoIndex = currentPhotoList.findIndex(item => item.id === fileId);
+            if (currentPhotoIndex === -1) currentPhotoIndex = 0;
+
+            document.getElementById('photoModal').classList.add('active');
+            updateModalPhoto();
+        }
+
+        function updateModalPhoto() {
+            if (currentPhotoList.length === 0 || currentPhotoIndex < 0) return;
+
+            const photo = currentPhotoList[currentPhotoIndex];
+            const modalImg = document.getElementById('modalImg');
+            const modalPhotoNum = document.getElementById('modalPhotoNum');
+
+            modalImg.src = photo.thumbUrl;
+            modalImg.srcset = '';
+
+            const highResImg = new Image();
+            highResImg.src = photo.fastPreviewUrl;
+            highResImg.onload = () => {
+                if (currentPhotoList[currentPhotoIndex] && currentPhotoList[currentPhotoIndex].id === photo.id) {
+                    modalImg.src = photo.fastPreviewUrl;
+                    modalImg.srcset = `${photo.fullUrl} 1x`;
+                }
+            };
+
+            if (modalPhotoNum) {
+                modalPhotoNum.textContent = photo.num ? `NO. ${photo.num}` : '';
+            }
+
+            const favs = getFavorites();
+            updateModalLikeBtnState(favs.has(photo.id));
+
+            const nextIdx = (currentPhotoIndex + 1) % currentPhotoList.length;
+            const prevIdx = (currentPhotoIndex - 1 + currentPhotoList.length) % currentPhotoList.length;
+
+            preloadHighRes(currentPhotoList[nextIdx].fastPreviewUrl, currentPhotoList[nextIdx].fullUrl);
+            preloadHighRes(currentPhotoList[prevIdx].fastPreviewUrl, currentPhotoList[prevIdx].fullUrl);
+        }
+
+        function navigatePhoto(direction) {
+            if (currentPhotoList.length === 0) return;
+            currentPhotoIndex += direction;
+
+            if (currentPhotoIndex < 0) {
+                currentPhotoIndex = currentPhotoList.length - 1;
+            } else if (currentPhotoIndex >= currentPhotoList.length) {
+                currentPhotoIndex = 0;
+            }
+
+            updateModalPhoto();
+        }
+
+        function hideModal() { 
+            const modalImg = document.getElementById('modalImg');
+            modalImg.src = '';
+            modalImg.srcset = '';
+            document.getElementById('photoModal').classList.remove('active'); 
+        }
+
+        function closeModal(event) { if (event.target.classList.contains('modal')) hideModal(); }
+
+        window.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('photoModal');
+            if (!modal.classList.contains('active')) return;
+
+            if (e.key === 'ArrowLeft') {
+                navigatePhoto(-1);
+            } else if (e.key === 'ArrowRight') {
+                navigatePhoto(1);
+            } else if (e.key === 'Escape') {
+                hideModal();
+            }
+        });
+
+        const modalContainer = document.getElementById('photoModal');
+        
+        modalContainer.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.modal-actions') || e.target.closest('.nav-btn') || e.target.closest('.modal-content')) return;
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        modalContainer.addEventListener('touchend', (e) => {
+            if (e.target.closest('.modal-actions') || e.target.closest('.nav-btn') || e.target.closest('.modal-content')) return;
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            if (touchEndX < touchStartX - swipeThreshold) {
+                navigatePhoto(1);
+            }
+            if (touchEndX > touchStartX + swipeThreshold) {
+                navigatePhoto(-1);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderPortalButtons();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramEvent = urlParams.get('event');
+
+            if (paramEvent && EVENTS_CONFIG[paramEvent]) {
+                selectEvent(paramEvent);
+            } else {
+                openPortalModal();
+            }
+
+            setInterval(() => { if (!document.hidden) fetchPhotos(); }, 6000);
+        });
+    </script>
+</body>
+
+</html>
