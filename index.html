@@ -669,6 +669,75 @@
             margin-top: 2px;
             font-weight: 400;
         }
+
+        /* ===== เลือกหลายรูป / แชร์ ===== */
+        .photo-item.selected { outline: 3px solid var(--champagne-gold); outline-offset: -3px; }
+        .photo-item.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: rgba(184, 155, 106, 0.92);
+            color: #FFFFFF;
+            font-size: 22px;
+            line-height: 38px;
+            text-align: center;
+            pointer-events: none;
+            z-index: 8;
+        }
+        body.select-mode { padding-bottom: 110px; }
+        .select-bar {
+            position: fixed; left: 0; right: 0; bottom: 0;
+            z-index: 1500;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+            background: rgba(24, 18, 16, 0.94);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--champagne-gold);
+            color: #FAF7F2;
+            font-family: 'Noto Serif Thai', serif;
+        }
+        body.select-mode .select-bar { display: flex; }
+        .select-count { font-size: 13px; text-align: center; }
+        .select-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .select-btn {
+            background: transparent;
+            border: 1px solid var(--champagne-gold);
+            color: var(--champagne-gold);
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: 'Noto Serif Thai', serif;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .select-btn.primary { background: var(--champagne-gold); color: #FAF7F2; }
+        .select-btn:disabled { opacity: 0.4; cursor: default; }
+        .toast {
+            position: fixed;
+            left: 50%; bottom: 120px;
+            transform: translateX(-50%);
+            background: rgba(24, 18, 16, 0.92);
+            color: #FAF7F2;
+            border: 1px solid var(--champagne-gold);
+            padding: 8px 16px;
+            border-radius: 18px;
+            font-size: 12px;
+            font-family: 'Noto Serif Thai', serif;
+            z-index: 3000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            max-width: 88%;
+            text-align: center;
+        }
+        .toast.show { opacity: 1; }
     </style>
 </head>
 
@@ -695,6 +764,7 @@
         <div class="filter-container">
             <button class="filter-btn active" id="btnAll" onclick="setFilter('all')">📷 แสดงทั้งหมด</button>
             <button class="filter-btn" id="btnFavorites" onclick="setFilter('favorites')">❤️ รูปที่ถูกใจ (<span id="favCount">0</span>)</button>
+            <button class="filter-btn" id="btnSelect" onclick="toggleSelectMode()">☑️ เลือกหลายรูป</button>
         </div>
         
         <div class="scroll-hint">👈 เลื่อนซ้าย-ขวาเพื่อชมรูปภาพ 👉</div>
@@ -721,12 +791,24 @@
         <div class="modal-actions" onclick="event.stopPropagation()">
             <div class="modal-info-row">
                 <button class="modal-like-btn" id="modalLikeBtn" onclick="toggleModalLike(event)">🤍</button>
+                <button class="modal-download-btn" id="modalShareBtn" style="display:none" onclick="shareCurrentPhoto(event)">📤 แชร์</button>
                 <button class="modal-download-btn" id="modalDownloadBtn" onclick="downloadCurrentPhoto(event)">📥 ดาวน์โหลด for Android</button>
                 <div class="modal-photo-num" id="modalPhotoNum">NO. ---</div>
             </div>
             <span class="save-tip">💡 สำหรับ Ios กดค้างที่รูปภาพเพื่อเลือก "บันทึกไปยังแอปรูปภาพ" (Save to Photos)</span>
         </div>
     </div>
+
+    <div class="select-bar" id="selectBar">
+        <div class="select-count" id="selectCount"></div>
+        <div class="select-row">
+            <button class="select-btn primary" id="selectShareBtn" onclick="shareSelected()" disabled>📤 แชร์</button>
+            <button class="select-btn" id="selectDownloadBtn" onclick="downloadSelected()" disabled>📥 ดาวน์โหลด</button>
+            <button class="select-btn" onclick="clearSelection()">ล้างที่เลือก</button>
+            <button class="select-btn" onclick="toggleSelectMode(false)">เสร็จสิ้น</button>
+        </div>
+    </div>
+    <div class="toast" id="toast"></div>
 
     <script>
         const EVENTS_CONFIG = {
@@ -743,6 +825,207 @@
         let STORAGE_KEY = '';
 
         const imageCache = new Map();
+
+        /* ===== แชร์รูป + เลือกหลายรูป ===== */
+        const MAX_SELECT = 20;               // เลือกได้สูงสุดกี่รูปต่อครั้ง
+        let selectMode = false;
+        let selectedIds = [];                // เรียงตามลำดับที่เลือก
+        const fileCache = new Map();         // id -> Promise<File>
+        const readyFiles = new Map();        // id -> File ที่โหลดเสร็จแล้ว (ต้องพร้อมก่อน เพื่อให้กดแชร์ได้ทันที)
+        let toastTimer = null;
+
+        // รองรับการแชร์เป็นไฟล์หรือไม่ (iPhone Safari, Android Chrome ฯลฯ; คอมส่วนใหญ่ไม่รองรับ)
+        const SHARE_FILES_OK = (() => {
+            try {
+                if (!navigator.share || !navigator.canShare) return false;
+                return navigator.canShare({ files: [new File(['x'], 'a.jpg', { type: 'image/jpeg' })] });
+            } catch (e) { return false; }
+        })();
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+        }
+
+        function getPhotoNum(id) {
+            const img = document.querySelector(`.photo-item[data-id="${id}"] img`);
+            return img ? img.getAttribute('data-photo-num') : '';
+        }
+
+        function driveMediaUrl(id) {
+            return `https://www.googleapis.com/drive/v3/files/${id}?alt=media&key=${API_KEY}`;
+        }
+
+        function loadPhotoFile(id) {
+            if (fileCache.has(id)) return fileCache.get(id);
+            // กันแคชโตเกินไป: ทิ้งรูปเก่าที่ไม่ได้เลือกและไม่ได้เปิดอยู่
+            if (fileCache.size > 40) {
+                const current = (currentPhotoList[currentPhotoIndex] || {}).id;
+                for (const k of [...fileCache.keys()]) {
+                    if (!selectedIds.includes(k) && k !== current) {
+                        fileCache.delete(k); readyFiles.delete(k);
+                        if (fileCache.size <= 30) break;
+                    }
+                }
+            }
+            const num = getPhotoNum(id);
+            const p = fetch(driveMediaUrl(id))
+                .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+                .then(blob => {
+                    const type = blob.type && blob.type.startsWith('image/') ? blob.type : 'image/jpeg';
+                    const file = new File([blob], `Photo_${num || id.slice(0, 6)}.jpg`, { type });
+                    readyFiles.set(id, file);
+                    onFileReady();
+                    return file;
+                })
+                .catch(err => { fileCache.delete(id); readyFiles.delete(id); throw err; });
+            fileCache.set(id, p);
+            return p;
+        }
+
+        function onFileReady() {
+            updateSelectBar();
+            refreshModalShareBtn();
+        }
+
+        function triggerDownload(file) {
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 15000);
+        }
+
+        // ต้องเรียกตรงจากการกดปุ่มเท่านั้น (ห้ามมี await ก่อนหน้า ไม่งั้นเบราว์เซอร์ไม่ยอมเปิดหน้าต่างแชร์)
+        async function shareFiles(files, title) {
+            try {
+                if (navigator.canShare && !navigator.canShare({ files })) {
+                    showToast('อุปกรณ์นี้แชร์รูปจำนวนนี้ไม่ได้ ลองเลือกน้อยลงหรือกดดาวน์โหลดแทน');
+                    return;
+                }
+                await navigator.share({ files, title });
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;   // ผู้ใช้กดยกเลิกเอง
+                showToast('แชร์ไม่สำเร็จ ลองกดดาวน์โหลดแทนนะคะ');
+            }
+        }
+
+        /* --- แชร์รูปเดียวใน modal --- */
+        function prepareModalShare(id) {
+            const btn = document.getElementById('modalShareBtn');
+            if (!SHARE_FILES_OK) { btn.style.display = 'none'; return; }
+            btn.style.display = 'flex';
+            loadPhotoFile(id).catch(() => {});
+            refreshModalShareBtn();
+        }
+
+        function refreshModalShareBtn() {
+            if (!SHARE_FILES_OK) return;
+            const photo = currentPhotoList[currentPhotoIndex];
+            if (!photo) return;
+            document.getElementById('modalShareBtn').textContent =
+                readyFiles.has(photo.id) ? '📤 แชร์' : '⏳ กำลังเตรียมรูป…';
+        }
+
+        function shareCurrentPhoto(event) {
+            if (event) { event.stopPropagation(); event.preventDefault(); }
+            const photo = currentPhotoList[currentPhotoIndex];
+            if (!photo) return;
+            const file = readyFiles.get(photo.id);
+            if (!file) {
+                showToast('กำลังเตรียมรูป… รอสักครู่แล้วกดอีกครั้ง');
+                loadPhotoFile(photo.id).catch(() => showToast('โหลดรูปไม่สำเร็จ ลองใหม่อีกครั้ง'));
+                return;
+            }
+            shareFiles([file], 'รูปจากงาน ' + ((EVENTS_CONFIG[currentEventKey] || {}).title || ''));
+        }
+
+        /* --- เลือกหลายรูป --- */
+        function toggleSelectMode(force) {
+            selectMode = (typeof force === 'boolean') ? force : !selectMode;
+            document.body.classList.toggle('select-mode', selectMode);
+            document.getElementById('btnSelect').classList.toggle('active', selectMode);
+            if (!selectMode) clearSelection(); else updateSelectBar();
+        }
+
+        function handlePhotoClick(fastPreviewUrl, fullUrl, fileId) {
+            if (selectMode) toggleSelect(fileId);
+            else openModal(fastPreviewUrl, fullUrl, fileId);
+        }
+
+        function toggleSelect(id) {
+            const i = selectedIds.indexOf(id);
+            if (i >= 0) {
+                selectedIds.splice(i, 1);
+            } else {
+                if (selectedIds.length >= MAX_SELECT) {
+                    showToast(`เลือกได้สูงสุด ${MAX_SELECT} รูปต่อครั้ง`);
+                    return;
+                }
+                selectedIds.push(id);
+                loadPhotoFile(id).catch(() => {
+                    selectedIds = selectedIds.filter(x => x !== id);
+                    syncSelectedClasses();
+                    updateSelectBar();
+                    showToast('โหลดบางรูปไม่สำเร็จ ลองเลือกใหม่อีกครั้ง');
+                });
+            }
+            syncSelectedClasses();
+            updateSelectBar();
+        }
+
+        function syncSelectedClasses() {
+            document.querySelectorAll('.photo-item').forEach(item => {
+                item.classList.toggle('selected', selectedIds.includes(item.getAttribute('data-id')));
+            });
+        }
+
+        function clearSelection() {
+            selectedIds = [];
+            syncSelectedClasses();
+            updateSelectBar();
+        }
+
+        function updateSelectBar() {
+            const n = selectedIds.length;
+            const ready = selectedIds.filter(id => readyFiles.has(id)).length;
+            const allReady = n > 0 && ready === n;
+            const countEl = document.getElementById('selectCount');
+            if (n === 0) countEl.textContent = `แตะรูปเพื่อเลือก (สูงสุด ${MAX_SELECT} รูป)`;
+            else countEl.textContent = `เลือกแล้ว ${n} รูป` + (allReady ? '' : ` · กำลังเตรียม ${ready}/${n}`);
+            const shareBtn = document.getElementById('selectShareBtn');
+            shareBtn.style.display = SHARE_FILES_OK ? '' : 'none';
+            shareBtn.disabled = !allReady;
+            document.getElementById('selectDownloadBtn').disabled = !allReady;
+        }
+
+        function shareSelected() {
+            const files = selectedIds.map(id => readyFiles.get(id)).filter(Boolean);
+            if (files.length === 0 || files.length !== selectedIds.length) {
+                showToast('กำลังเตรียมรูป กรุณารอสักครู่');
+                return;
+            }
+            shareFiles(files, 'รูปจากงาน ' + ((EVENTS_CONFIG[currentEventKey] || {}).title || ''));
+        }
+
+        async function downloadSelected() {
+            const files = selectedIds.map(id => readyFiles.get(id)).filter(Boolean);
+            if (files.length === 0 || files.length !== selectedIds.length) {
+                showToast('กำลังเตรียมรูป กรุณารอสักครู่');
+                return;
+            }
+            showToast(`กำลังดาวน์โหลด ${files.length} รูป`);
+            for (const f of files) {
+                triggerDownload(f);
+                await new Promise(r => setTimeout(r, 450));   // เว้นจังหวะ เบราว์เซอร์จะไม่บล็อกการดาวน์โหลดหลายไฟล์
+            }
+        }
         let currentFilter = 'all';
 
         let currentPhotoList = [];
@@ -1029,7 +1312,7 @@
                                 <img src="${thumbUrl}" alt="${file.name}" data-clean-name="${cleanName}" data-photo-num="${photoNum}" crossorigin="anonymous" loading="lazy" decoding="async" 
                                      ontouchstart="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
                                      onmouseenter="preloadHighRes('${fastPreviewUrl}', '${fullUrl}')" 
-                                     onclick="openModal('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
+                                     onclick="handlePhotoClick('${fastPreviewUrl}', '${fullUrl}', '${file.id}')">
                                 <div class="time-badge">🕒 ${timeText}</div>
                             `;
                             fragment.appendChild(item);
@@ -1091,6 +1374,7 @@
 
             const favs = getFavorites();
             updateModalLikeBtnState(favs.has(photo.id));
+            prepareModalShare(photo.id);
 
             const nextIdx = (currentPhotoIndex + 1) % currentPhotoList.length;
             const prevIdx = (currentPhotoIndex - 1 + currentPhotoList.length) % currentPhotoList.length;
@@ -1172,6 +1456,9 @@
             setInterval(() => { if (!document.hidden) fetchPhotos(); }, 6000);
         });
     </script>
+    <div style="text-align:center;padding:24px 12px;font-size:12px;opacity:.7;">
+        <a href="privacy.html" style="color:inherit;">Privacy Policy</a>
+    </div>
 </body>
 
 </html>
