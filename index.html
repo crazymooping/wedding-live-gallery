@@ -1286,7 +1286,7 @@
             if (!FOLDER_ID || document.getElementById('photoModal').classList.contains('active')) return;
 
             try {
-                // ดึงให้ครบทุกหน้า (Drive ตอบทีละ 100 ไฟล์ถ้าไม่ระบุ pageSize)
+                // ดึงรายการไฟล์ทั้งหมดจาก Google Drive
                 let allFiles = [];
                 let fetchOk = true;
                 let pageToken = '';
@@ -1300,19 +1300,36 @@
                     pageToken = page.nextPageToken || '';
                 } while (pageToken);
 
-                const data = { files: allFiles };
-                if (fetchOk) pruneFavorites(new Set(allFiles.map(f => f.id)));
+                if (!fetchOk) return;
+
+                const driveFileIds = new Set(allFiles.map(f => f.id));
+                pruneFavorites(driveFileIds);
+
                 const gallery = document.getElementById('gallery');
                 const favs = getFavorites();
 
-                if (data.files && data.files.length > 0) {
-                    const existingIds = new Set([...document.querySelectorAll('.photo-item')].map(item => item.getAttribute('data-id')));
-                    const existingNames = new Set([...document.querySelectorAll('.photo-item img')].map(img => img.getAttribute('data-clean-name')));
+                // -------------------------------------------------------------
+                // 🔴 [ระบบลบรูปออโต้] ถ้าลบรูปใน Drive ลบการ์ดรูปบนเว็บออกทันที
+                // -------------------------------------------------------------
+                const currentCards = gallery.querySelectorAll('.photo-item');
+                currentCards.forEach(card => {
+                    const cardId = card.getAttribute('data-id');
+                    if (!driveFileIds.has(cardId)) {
+                        card.remove(); // ลบ Element รูปนั้นออกจากหน้าจอทันที
+                    }
+                });
+
+                // -------------------------------------------------------------
+                // 🟢 เพิ่มรูปใหม่เข้ามาบนหน้าเว็บ
+                // -------------------------------------------------------------
+                if (allFiles.length > 0) {
+                    const existingIds = new Set([...gallery.querySelectorAll('.photo-item')].map(item => item.getAttribute('data-id')));
+                    const existingNames = new Set([...gallery.querySelectorAll('.photo-item img')].map(img => img.getAttribute('data-clean-name')));
 
                     const fragment = document.createDocumentFragment();
                     let hasNewPhoto = false;
 
-                    data.files.forEach(file => {
+                    allFiles.forEach(file => {
                         const cleanName = getBaseFileName(file.name);
 
                         if (!existingIds.has(file.id) && !existingNames.has(cleanName)) {
@@ -1348,9 +1365,10 @@
 
                     if (hasNewPhoto) {
                         gallery.insertBefore(fragment, gallery.firstChild);
-                        applyFilter();
                     }
                 }
+                
+                applyFilter();
             } catch (err) { console.error(err); }
         }
 
