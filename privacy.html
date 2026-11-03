@@ -1,38 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Privacy Policy – Wedding Live Gallery</title>
+<title>Privacy Policy / นโยบายความเป็นส่วนตัว – Wedding Live Gallery</title>
 <style>
-  body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #222; background: #fff; }
-  h1 { font-size: 1.6rem; } h2 { font-size: 1.15rem; margin-top: 1.8rem; }
-  a { color: #8a5a44; }
-  @media (prefers-color-scheme: dark) { body { color: #e6e6e6; background: #181818; } a { color: #d9a98f; } }
+  body { font-family: -apple-system, "Segoe UI", "Noto Sans Thai", Helvetica, Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px 60px; line-height: 1.7; color: #222; background: #fff; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; } h2 { font-size: 1.1rem; margin-top: 1.8rem; }
+  .lang-switch { margin: 6px 0 22px; font-size: 0.9rem; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 36px 0; }
+  a { color: #8a5a44; } code { background: rgba(128,128,128,.15); padding: 1px 5px; border-radius: 4px; }
+  @media (prefers-color-scheme: dark) { body { color: #e6e6e6; background: #181818; } a { color: #d9a98f; } hr { border-color: #444; } }
 </style>
 </head>
 <body>
-<h1>Privacy Policy</h1>
-<p>Last updated: November 2026</p>
 
-<p><strong>Wedding Live Gallery</strong> is a small personal tool used by a photographer to show wedding photos to guests in real time. It has two parts: (1) a desktop uploader script that runs on the photographer's own computer and (2) this public gallery web page.</p>
+<h1>นโยบายความเป็นส่วนตัว</h1>
+<div class="lang-switch">ภาษาไทย · <a href="#en">English</a> · ปรับปรุงล่าสุด: พฤศจิกายน 2569 (November 2026)</div>
 
-<h2>What the uploader accesses</h2>
-<p>The uploader asks for the Google Drive scope <code>drive.file</code> and uses it only to upload photos and videos from a folder on the photographer's computer into one Google Drive folder owned by the photographer. It does not read, list, change or delete any other files in the Google account. It is used only by the app owner; no other users sign in to it.</p>
+<p><strong>Wedding Live Gallery</strong> เป็นเครื่องมือส่วนตัวของช่างภาพ ใช้แสดงรูปงานแต่งให้แขกดูแบบเรียลไทม์ ประกอบด้วย 2 ส่วน คือ (1) โปรแกรมอัปโหลดที่ทำงานบนคอมพิวเตอร์ของช่างภาพ และ (2) หน้าเว็บแกลเลอรีสาธารณะนี้</p>
 
-<h2>What this web page does</h2>
-<p>The gallery page displays the photos in that one shared Drive folder. Guests are not asked to sign in and the page does not collect names, emails or any other personal information. A guest's "favorite" (heart) selections are stored only in that guest's own browser (localStorage) and are never sent to us.</p>
+<h2>โปรแกรมอัปโหลด (ฝั่งช่างภาพ)</h2>
+<p>ขอสิทธิ์ Google Drive แบบ <code>drive.file</code> เพื่ออัปโหลดรูปและวิดีโอจากโฟลเดอร์ในคอมพิวเตอร์ของช่างภาพไปยังโฟลเดอร์ Google Drive ของช่างภาพเอง โปรแกรมไม่อ่าน แก้ไข หรือลบไฟล์อื่นในบัญชี และใช้งานโดยเจ้าของแอปเท่านั้น ไม่มีผู้ใช้รายอื่นล็อกอิน</p>
 
-<h2>Use and sharing of Google user data</h2>
-<p>Google user data is used solely to upload the event photos to the owner's Drive folder. It is not sold, shared with third parties, used for advertising, or used to train AI models. The app's use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.</p>
+<h2>หน้าเว็บแกลเลอรี (ฝั่งแขก)</h2>
+<p>หน้าเว็บแสดงรูปในโฟลเดอร์ Drive ที่แชร์ไว้ แขกไม่ต้องล็อกอิน และเราไม่เก็บชื่อ อีเมล หรือข้อมูลส่วนตัวของแขก รายการ "รูปที่ถูกใจ" เก็บไว้ในเบราว์เซอร์ของแขกเองเท่านั้น (localStorage) ไม่ถูกส่งมาที่เรา การแชร์หรือดาวน์โหลดรูปจะดึงไฟล์รูปมาที่เครื่องของแขกโดยตรง</p>
 
-<h2>Storage and retention</h2>
-<p>Photos are stored in the photographer's own Google Drive and can be deleted by the photographer at any time. Authorization tokens are kept only on the photographer's computer and can be revoked at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</p>
+<h2>ฟังก์ชัน "ค้นหาเลข NO." และ "หารูปของฉัน"</h2>
+<ul>
+  <li><strong>ค้นหาเลข NO.</strong> เป็นการกรองรูปตามเลขท้ายชื่อไฟล์ในเครื่องของแขก ไม่เก็บข้อมูลใดๆ</li>
+  <li><strong>หารูปของฉัน (ค้นหาด้วยใบหน้า)</strong> เป็นฟังก์ชันที่แขกเลือกใช้เอง รูปเซลฟี่หรือรูปที่แขกเลือก<u>ถูกประมวลผลในเครื่องของแขกเท่านั้น ไม่ถูกอัปโหลดหรือบันทึกที่ใด</u> ระบบแปลงใบหน้าเป็นชุดตัวเลข (ลายนิ้วมือใบหน้า) แล้วเทียบกับดัชนีใบหน้าของรูปในงานทันที</li>
+  <li><strong>ดัชนีใบหน้าของรูปในงาน (ไฟล์ <code>faces.json</code>)</strong> สร้างโดยคอมพิวเตอร์ของช่างภาพตอนอัปรูป เก็บเป็นชุดตัวเลขของใบหน้าที่ตรวจพบในแต่ละรูป (ไม่ใช่ภาพใบหน้า) และเก็บไว้ในโฟลเดอร์ Drive เดียวกับรูป จึง<u>ผู้ที่มีลิงก์ของงานสามารถดาวน์โหลดไฟล์นี้ได้</u> ใช้เพื่อให้ฟังก์ชันค้นหาด้วยใบหน้าทำงานเท่านั้น ไม่ใช้เพื่อวัตถุประสงค์อื่น ไม่ขาย และไม่แบ่งปันให้บุคคลที่สาม</li>
+  <li>เบราว์เซอร์ของแขกอาจเก็บผลการสแกนใบหน้าชั่วคราวไว้ในเครื่องเพื่อให้ค้นหาครั้งต่อไปเร็วขึ้น (IndexedDB) และแขกลบได้โดยล้างข้อมูลเว็บไซต์ในเบราว์เซอร์</li>
+  <li>ระบบประมวลผลใบหน้าใช้ไลบรารีโอเพนซอร์ส face-api.js ซึ่งโหลดจาก jsDelivr CDN การโหลดนี้ไม่ส่งรูปของแขกไปที่ใด</li>
+</ul>
 
-<h2>Photos of guests</h2>
-<p>If you appear in a photo and would like it removed from the gallery, please contact the photographer using the email below and it will be deleted.</p>
+<h2>การใช้ข้อมูลจาก Google API</h2>
+<p>ข้อมูลจากบัญชี Google ถูกใช้เพื่ออัปโหลดรูปงานไปยังโฟลเดอร์ Drive ของเจ้าของแอปเท่านั้น ไม่มีการขาย แบ่งปันให้บุคคลที่สาม ใช้โฆษณา หรือใช้ฝึกโมเดล AI การใช้ข้อมูลที่ได้รับจาก Google APIs เป็นไปตาม <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a> รวมถึงข้อกำหนด Limited Use</p>
+
+<h2>การเก็บรักษาและการลบ</h2>
+<p>รูปและดัชนีใบหน้าเก็บไว้ใน Google Drive ของช่างภาพ และลบได้ทุกเมื่อ เมื่องานสิ้นสุด ช่างภาพอาจปิดการแชร์โฟลเดอร์หรือลบรูปและไฟล์ <code>faces.json</code> โทเค็นการเข้าถึงเก็บไว้ในคอมพิวเตอร์ของช่างภาพเท่านั้น และเพิกถอนได้ที่ <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a></p>
+
+<h2>การขอลบรูปของคุณ</h2>
+<p>หากคุณปรากฏในรูปและต้องการให้ลบรูปออกจากแกลเลอรีหรือลบข้อมูลใบหน้าของรูปนั้นออกจากดัชนี กรุณาติดต่อช่างภาพทางอีเมลด้านล่าง พร้อมระบุเลข NO. ของรูป เราจะดำเนินการโดยเร็ว</p>
+
+<h2>ติดต่อ</h2>
+<p><a href="mailto:piwatvsp@gmail.com">piwatvsp@gmail.com</a></p>
+
+<hr>
+
+<h1 id="en">Privacy Policy</h1>
+<div class="lang-switch"><a href="#">ภาษาไทย</a> · English · Last updated: November 2026</div>
+
+<p><strong>Wedding Live Gallery</strong> is a small personal tool used by a photographer to show wedding photos to guests in real time. It has two parts: (1) an uploader that runs on the photographer's own computer and (2) this public gallery web page.</p>
+
+<h2>The uploader (photographer side)</h2>
+<p>It requests the Google Drive scope <code>drive.file</code> and uses it only to upload photos and videos from a folder on the photographer's computer into one Google Drive folder owned by the photographer. It does not read, change or delete any other files in the account, and only the app owner uses it; no other users sign in.</p>
+
+<h2>The gallery page (guest side)</h2>
+<p>The page displays the photos in that shared Drive folder. Guests do not sign in, and we do not collect names, emails or other personal information. A guest's "favorites" are stored only in that guest's own browser (localStorage) and are never sent to us. Sharing or downloading a photo fetches the image file directly to the guest's device.</p>
+
+<h2>"Search by NO." and "Find my photos"</h2>
+<ul>
+  <li><strong>Search by NO.</strong> filters photos by the number at the end of the file name, on the guest's device. No data is collected.</li>
+  <li><strong>Find my photos (face search)</strong> is optional and started by the guest. The selfie or photo the guest picks is <u>processed on the guest's device only and is never uploaded or stored anywhere</u>. It is converted into a set of numbers (a face descriptor) and compared with the event's face index.</li>
+  <li><strong>The event face index (<code>faces.json</code>)</strong> is created by the photographer's computer while photos are uploaded. It contains numeric face descriptors for faces detected in each photo (not face images) and is stored in the same Drive folder as the photos, so <u>anyone who has the event link can download this file</u>. It is used only to power face search, is not used for any other purpose, is not sold and is not shared with third parties.</li>
+  <li>A guest's browser may cache face-scan results locally (IndexedDB) to make later searches faster; guests can remove this by clearing the site's data in their browser.</li>
+  <li>Face processing uses the open-source library face-api.js, loaded from the jsDelivr CDN. Loading it does not send guests' photos anywhere.</li>
+</ul>
+
+<h2>Use of Google user data</h2>
+<p>Google user data is used solely to upload the event photos to the owner's Drive folder. It is not sold, shared with third parties, used for advertising, or used to train AI models. The app's use of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+<h2>Retention and deletion</h2>
+<p>Photos and the face index are stored in the photographer's Google Drive and can be deleted at any time. When the event is over, the photographer may stop sharing the folder or delete the photos and <code>faces.json</code>. Access tokens are kept only on the photographer's computer and can be revoked at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</p>
+
+<h2>Removal requests</h2>
+<p>If you appear in a photo and want it removed from the gallery, or want your face data removed from the index for that photo, please email the photographer below with the photo's NO. and it will be removed promptly.</p>
 
 <h2>Contact</h2>
-<p>EMAIL_PLACEHOLDER</p>
+<p><a href="mailto:piwatvsp@gmail.com">piwatvsp@gmail.com</a></p>
+
 </body>
 </html>
