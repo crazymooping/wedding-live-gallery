@@ -762,6 +762,113 @@
             text-align: center;
         }
         .toast.show { opacity: 1; }
+
+        /* ===== ค้นหารูป (เลข NO. / สแกนใบหน้า) ===== */
+        .tool-row { margin-top: 6px; display: flex; justify-content: center; gap: 8px; }
+        .tool-btn {
+            background: transparent;
+            border: 1px solid var(--gold-light);
+            color: var(--champagne-gold);
+            padding: 3px 12px;
+            border-radius: 16px;
+            font-size: 10.5px;
+            font-family: 'Noto Serif Thai', serif;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .tool-btn:active { background: var(--gold-light); }
+        body.select-mode .tool-row { display: none; }
+        .search-status {
+            display: none;
+            font-size: clamp(9px, 1vw, 11px);
+            color: var(--text-main);
+            margin-top: 4px;
+            line-height: 16px;
+            min-height: 16px;
+        }
+        .status-clear {
+            background: transparent;
+            border: 1px solid var(--champagne-gold);
+            color: var(--champagne-gold);
+            border-radius: 10px;
+            font-size: 10px;
+            line-height: 14px;
+            padding: 0 7px;
+            margin-left: 4px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .sheet-backdrop {
+            position: fixed; inset: 0;
+            z-index: 2200;
+            background: rgba(24, 18, 16, 0.45);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .sheet-backdrop.open { display: flex; }
+        .sheet {
+            position: relative;
+            width: 100%;
+            max-width: 520px;
+            max-height: 85dvh;
+            overflow-y: auto;
+            background: var(--bg-color);
+            border-radius: 18px 18px 0 0;
+            border-top: 2px solid var(--champagne-gold);
+            padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+            font-family: 'Noto Serif Thai', serif;
+            color: var(--text-main);
+            touch-action: pan-y;
+        }
+        .sheet-close {
+            position: absolute; top: 6px; right: 12px;
+            background: none; border: none;
+            font-size: 26px; color: var(--text-muted); cursor: pointer;
+        }
+        .sheet-tabs { display: flex; gap: 8px; justify-content: center; margin: 4px 0 12px; }
+        .sheet-tab {
+            background: transparent;
+            border: 1px solid var(--champagne-gold);
+            color: var(--text-main);
+            padding: 5px 14px;
+            border-radius: 18px;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .sheet-tab.active { background: var(--champagne-gold); color: #FAF7F2; }
+        .sheet-pane.is-off { display: none; }
+        .sheet-desc { font-size: 13px; line-height: 1.6; color: var(--text-muted); margin-bottom: 10px; text-align: center; }
+        .sheet-note { font-size: 11px; line-height: 1.6; color: var(--text-muted); margin-top: 12px; text-align: center; }
+        .sheet-pane input[type="text"] {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 18px;
+            border: 1px solid var(--champagne-gold);
+            border-radius: 12px;
+            background: #FFFFFF;
+            color: var(--text-main);
+            font-family: inherit;
+            text-align: center;
+            outline: none;
+        }
+        .sheet-result { min-height: 20px; margin: 10px 0 4px; font-size: 13px; text-align: center; color: var(--text-main); }
+        .sheet-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+        .sheet-actions.is-off { display: none; }
+        .sheet-btn {
+            display: inline-block;
+            background: transparent;
+            border: 1px solid var(--champagne-gold);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .sheet-btn.primary { background: var(--champagne-gold); color: #FAF7F2; }
     </style>
 </head>
 
@@ -790,7 +897,13 @@
             <button class="filter-btn" id="btnSelect" onclick="toggleSelectMode()">☑️ เลือกหลายรูป</button>
         </div>
         
+        <div class="tool-row">
+            <button class="tool-btn" onclick="openSearchSheet('no')">🔎 ค้นหาเลข NO.</button>
+            <button class="tool-btn" onclick="openSearchSheet('face')">🙂 หารูปของฉัน</button>
+        </div>
+
         <div class="scroll-hint">👈 เลื่อนซ้าย-ขวาเพื่อชมรูปภาพ 👉</div>
+        <div class="search-status" id="searchStatus"></div>
     </header>
 
     <div class="gallery-container">
@@ -830,6 +943,39 @@
             <button class="select-btn" id="selectDownloadBtn" onclick="downloadSelected()" disabled>📥 ดาวน์โหลด</button>
             <button class="select-btn" onclick="clearSelection()">ล้างที่เลือก</button>
             <button class="select-btn" onclick="toggleSelectMode(false)">เสร็จสิ้น</button>
+        </div>
+    </div>
+    <div class="sheet-backdrop" id="searchSheet" onclick="closeSearchSheet()">
+        <div class="sheet" onclick="event.stopPropagation()">
+            <button class="sheet-close" onclick="closeSearchSheet()">&times;</button>
+            <div class="sheet-tabs">
+                <button class="sheet-tab active" id="tabNo" onclick="switchSearchTab('no')">🔎 เลข NO.</button>
+                <button class="sheet-tab" id="tabFace" onclick="switchSearchTab('face')">🙂 หารูปของฉัน</button>
+            </div>
+
+            <div class="sheet-pane" id="paneNo">
+                <p class="sheet-desc">พิมพ์เลขรูปที่ต้องการ เช่น 5 หรือ 005 (พิมพ์แค่บางส่วนก็ได้)</p>
+                <input type="text" id="noInput" inputmode="numeric" autocomplete="off" placeholder="เลข NO." oninput="onNoInput(this.value)">
+                <div class="sheet-result" id="noResult"></div>
+                <div class="sheet-actions">
+                    <button class="sheet-btn" onclick="clearNoSearch()">ล้าง</button>
+                    <button class="sheet-btn primary" onclick="closeSearchSheet()">ดูรูป</button>
+                </div>
+            </div>
+
+            <div class="sheet-pane is-off" id="paneFace">
+                <p class="sheet-desc">ถ่ายเซลฟี่หรือเลือกรูปที่เห็นหน้าคุณชัดๆ ระบบจะหารูปที่มีคุณในงานนี้ให้</p>
+                <div class="sheet-actions">
+                    <label class="sheet-btn primary">📷 ถ่ายเซลฟี่<input type="file" accept="image/*" capture="user" hidden onchange="onSelfiePicked(this)"></label>
+                    <label class="sheet-btn">🖼️ เลือกรูปจากเครื่อง<input type="file" accept="image/*" hidden onchange="onSelfiePicked(this)"></label>
+                </div>
+                <div class="sheet-result" id="faceMsg"></div>
+                <div class="sheet-actions is-off" id="faceActive">
+                    <button class="sheet-btn" id="btnWide" onclick="toggleWideFace()">ลองค้นแบบกว้างขึ้น</button>
+                    <button class="sheet-btn" onclick="clearFaceSearch()">ล้างผล</button>
+                </div>
+                <p class="sheet-note">🔒 รูปเซลฟี่ถูกประมวลผลในเครื่องของคุณเท่านั้น ไม่ถูกอัปโหลดไปที่ไหน<br>ครั้งแรกต้องโหลดข้อมูลสแกนใบหน้าราว 7MB (แนะนำใช้ Wi-Fi หรือ 5G) และสแกนรูปทั้งหมดอาจใช้เวลาสักครู่ ผลลัพธ์อาจไม่แม่นยำ 100%</p>
+            </div>
         </div>
     </div>
     <div class="toast" id="toast"></div>
@@ -1239,25 +1385,404 @@
 
             items.forEach(item => {
                 const id = item.getAttribute('data-id');
-                if (currentFilter === 'all') {
-                    item.classList.remove('hidden');
-                    visibleCount++;
-                } else {
-                    if (favs.has(id)) {
-                        item.classList.remove('hidden');
-                        visibleCount++;
-                    } else {
-                        item.classList.add('hidden');
-                    }
-                }
+                let show = (currentFilter === 'all') || favs.has(id);
+                if (show && searchQuery) show = photoNumMatches(item, searchQuery);
+                if (show && faceState.matches) show = faceState.matches.has(id);
+                if (show) { item.classList.remove('hidden'); visibleCount++; }
+                else { item.classList.add('hidden'); }
             });
 
             const emptyState = document.getElementById('emptyState');
-            if (currentFilter === 'favorites' && visibleCount === 0) {
+            if (emptyState.dataset.def === undefined) emptyState.dataset.def = emptyState.textContent;
+            const searching = !!searchQuery || !!faceState.matches;
+            if (visibleCount === 0 && (searching || currentFilter === 'favorites')) {
+                if (searching) {
+                    const scanning = faceState.matches && faceState.scanning;
+                    emptyState.textContent = scanning ? 'กำลังหาอยู่ รอสักครู่นะคะ 🔍' : 'ไม่พบรูปที่ตรงกับการค้นหา 🔍';
+                } else {
+                    emptyState.textContent = emptyState.dataset.def;
+                }
                 emptyState.style.display = 'block';
             } else {
                 emptyState.style.display = 'none';
             }
+            updateSearchStatus(visibleCount);
+            updateNoResult(visibleCount);
+        }
+
+        /* ===== ค้นหารูป: เลข NO. + สแกนใบหน้า ===== */
+        let searchQuery = '';
+
+        // --- ค้นหาด้วยเลข NO. ---
+        function normalizeNo(s) {
+            return String(s || '').trim().toLowerCase().split('-').map(p => p.replace(/^0+(?=\d)/, '')).join('-');
+        }
+
+        function photoNumMatches(item, q) {
+            const img = item.querySelector('img');
+            const num = img ? (img.getAttribute('data-photo-num') || '') : '';
+            return normalizeNo(num).startsWith(normalizeNo(q));
+        }
+
+        function scrollGalleryToStart() {
+            const g = document.getElementById('gallery');
+            if (g && g.scrollTo) g.scrollTo({ left: 0, behavior: 'smooth' });
+        }
+
+        function onNoInput(v) {
+            searchQuery = String(v || '').trim();
+            applyFilter();
+            scrollGalleryToStart();
+        }
+
+        function updateNoResult(visible) {
+            const el = document.getElementById('noResult');
+            if (!el) return;
+            if (!searchQuery) { el.textContent = ''; return; }
+            const n = (typeof visible === 'number') ? visible : document.querySelectorAll('.photo-item:not(.hidden)').length;
+            el.textContent = n > 0 ? `พบ ${n} รูป` : 'ไม่พบเลขนี้';
+        }
+
+        function clearNoSearch() {
+            searchQuery = '';
+            const input = document.getElementById('noInput');
+            if (input) input.value = '';
+            applyFilter();
+        }
+
+        // --- สแกนใบหน้า (ทำงานในเครื่องผู้ใช้ด้วย face-api.js) ---
+        const FACE_SOURCES = [
+            { script: 'https://cdn.jsdelivr.net/gh/vladmandic/face-api@1.7.12/dist/face-api.js',
+              models: 'https://cdn.jsdelivr.net/gh/vladmandic/face-api@1.7.12/model/' },
+            { script: 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js',
+              models: 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/' }
+        ];
+        const FACE_SCAN_SIZE = 640;      // ขนาดรูปที่ใช้สแกน (px) ใหญ่ขึ้น = เจอหน้าเล็กได้ดีขึ้น แต่โหลดมากขึ้น
+        const FACE_DETECT_INPUT = 512;
+        const FACE_CACHE_VER = 'v1-tiny512-s640';
+        const FACE_THRESHOLD = { normal: 0.5, wide: 0.6 };
+
+        const faceState = { active: false, scanning: false, token: 0, selfie: null, wide: false, matches: null };
+        const faceDescs = new Map();     // id -> Float32Array[] (ใบหน้าทั้งหมดในรูป)
+        const faceFailed = new Set();
+        let faceEnginePromise = null;
+        let faceDbPromise = null;
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        function faceError(code, cause) { const e = new Error(code); e.code = code; e.cause = cause; return e; }
+
+        function faceDb() {
+            if (faceDbPromise) return faceDbPromise;
+            faceDbPromise = new Promise(resolve => {
+                try {
+                    const req = indexedDB.open('wedding-face-cache', 1);
+                    req.onupgradeneeded = () => req.result.createObjectStore('desc', { keyPath: 'k' });
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                    req.onblocked = () => resolve(null);
+                } catch (e) { resolve(null); }
+            });
+            return faceDbPromise;
+        }
+
+        async function faceCacheGet(k) {
+            try {
+                const db = await faceDb();
+                if (!db) return null;
+                return await new Promise(resolve => {
+                    const req = db.transaction('desc').objectStore('desc').get(k);
+                    req.onsuccess = () => resolve(req.result ? req.result.d : null);
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) { return null; }
+        }
+
+        async function faceCachePut(k, d) {
+            try {
+                const db = await faceDb();
+                if (!db) return;
+                db.transaction('desc', 'readwrite').objectStore('desc').put({ k, d });
+            } catch (e) { /* ไม่เป็นไร แค่ไม่ได้แคช */ }
+        }
+
+        function loadScriptOnce(src) {
+            return new Promise((resolve, reject) => {
+                const el = document.createElement('script');
+                el.src = src;
+                el.async = true;
+                el.onload = () => resolve();
+                el.onerror = () => { el.remove(); reject(new Error('script load failed: ' + src)); };
+                document.head.appendChild(el);
+            });
+        }
+
+        function loadFaceEngine(onStatus) {
+            if (faceEnginePromise) return faceEnginePromise;
+            faceEnginePromise = (async () => {
+                let lastErr = null;
+                for (const src of FACE_SOURCES) {
+                    try {
+                        if (!window.faceapi) {
+                            if (onStatus) onStatus('⏳ กำลังโหลดระบบสแกนใบหน้า…');
+                            await loadScriptOnce(src.script);
+                        }
+                        if (!window.faceapi) throw new Error('faceapi not found after load');
+                        if (onStatus) onStatus('⏳ กำลังโหลดข้อมูลใบหน้า… (ครั้งแรกอาจใช้เวลาสักครู่)');
+                        await Promise.all([
+                            faceapi.nets.tinyFaceDetector.loadFromUri(src.models),
+                            faceapi.nets.faceLandmark68Net.loadFromUri(src.models),
+                            faceapi.nets.faceRecognitionNet.loadFromUri(src.models)
+                        ]);
+                        return true;
+                    } catch (e) {
+                        lastErr = e;
+                        console.warn('face engine source failed:', src.script, e);
+                    }
+                }
+                throw faceError('ENGINE', lastErr);
+            })().catch(e => { faceEnginePromise = null; throw e; });
+            return faceEnginePromise;
+        }
+
+        function loadFaceImage(url, cors) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                if (cors) img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('image load failed'));
+                img.src = url;
+            });
+        }
+
+        async function fileToCanvas(file, maxSide) {
+            const url = URL.createObjectURL(file);
+            try {
+                const img = await loadFaceImage(url, false);
+                const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+                const scale = Math.min(1, maxSide / Math.max(w, h));
+                const c = document.createElement('canvas');
+                c.width = Math.max(1, Math.round(w * scale));
+                c.height = Math.max(1, Math.round(h * scale));
+                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                return c;
+            } finally { URL.revokeObjectURL(url); }
+        }
+
+        function faceDistance(a, b) {
+            let sum = 0;
+            for (let i = 0; i < a.length; i++) { const d = a[i] - b[i]; sum += d * d; }
+            return Math.sqrt(sum);
+        }
+
+        async function detectDescriptors(input, scoreThreshold) {
+            const results = await faceapi
+                .detectAllFaces(input, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold }))
+                .withFaceLandmarks()
+                .withFaceDescriptors();
+            return results;
+        }
+
+        async function getSelfieDescriptor(file) {
+            const canvas = await fileToCanvas(file, 800);
+            const results = await detectDescriptors(canvas, 0.5);
+            if (!results.length) throw faceError('NO_FACE');
+            let best = results[0];
+            for (const r of results) {
+                const a = r.detection.box, b = best.detection.box;
+                if (a.width * a.height > b.width * b.height) best = r;
+            }
+            return { descriptor: Float32Array.from(best.descriptor), count: results.length };
+        }
+
+        async function getFaceDescriptors(id) {
+            const key = FACE_CACHE_VER + ':' + id;
+            const cached = await faceCacheGet(key);
+            if (cached) return cached.map(a => Float32Array.from(a));
+            const img = await loadFaceImage(`https://lh3.googleusercontent.com/d/${id}=s${FACE_SCAN_SIZE}`, true);
+            const results = await detectDescriptors(img, 0.4);
+            const descs = results.map(r => Array.from(r.descriptor));
+            img.src = '';
+            await faceCachePut(key, descs);
+            return descs.map(a => Float32Array.from(a));
+        }
+
+        function faceThreshold() { return faceState.wide ? FACE_THRESHOLD.wide : FACE_THRESHOLD.normal; }
+
+        function photoMatchesFace(id) {
+            if (!faceState.selfie) return false;
+            const descs = faceDescs.get(id);
+            if (!descs) return false;
+            const th = faceThreshold();
+            return descs.some(d => faceDistance(d, faceState.selfie) <= th);
+        }
+
+        function recomputeFaceMatches() {
+            const m = new Set();
+            for (const id of faceDescs.keys()) if (photoMatchesFace(id)) m.add(id);
+            faceState.matches = m;
+        }
+
+        function faceProgress() {
+            const ids = [...document.querySelectorAll('.photo-item')].map(e => e.getAttribute('data-id'));
+            const done = ids.filter(id => faceDescs.has(id) || faceFailed.has(id)).length;
+            return { done, total: ids.length };
+        }
+
+        function setFaceMsg(text) {
+            const el = document.getElementById('faceMsg');
+            if (el) el.textContent = text || '';
+        }
+
+        function onSelfiePicked(input) {
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (file) startFaceSearch(file);
+        }
+
+        async function startFaceSearch(file) {
+            const myToken = ++faceState.token;
+            faceState.active = false;
+            faceState.matches = null;
+            faceState.selfie = null;
+            applyFilter();
+            try {
+                setFaceMsg('⏳ กำลังเตรียมระบบสแกนใบหน้า…');
+                await loadFaceEngine(setFaceMsg);
+                if (myToken !== faceState.token) return;
+                setFaceMsg('🔍 กำลังหาใบหน้าในรูปของคุณ…');
+                const r = await getSelfieDescriptor(file);
+                if (myToken !== faceState.token) return;
+                faceState.selfie = r.descriptor;
+                faceState.wide = false;
+                faceState.active = true;
+                recomputeFaceMatches();
+                setFaceMsg(r.count > 1 ? 'พบหลายใบหน้าในรูป ใช้ใบหน้าที่ใหญ่ที่สุด' : '');
+                refreshFacePane();
+                closeSearchSheet();
+                applyFilter();
+                scrollGalleryToStart();
+                scanFaces(myToken);
+            } catch (e) {
+                console.error(e);
+                if (myToken !== faceState.token) return;
+                if (e && e.code === 'NO_FACE') setFaceMsg('😅 ไม่พบใบหน้าในรูปนี้ ลองรูปที่เห็นหน้าตรงและแสงสว่างพอ');
+                else if (e && e.code === 'ENGINE') setFaceMsg('⚠️ โหลดระบบสแกนใบหน้าไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง');
+                else setFaceMsg('⚠️ สแกนไม่สำเร็จ ลองใหม่อีกครั้ง');
+            }
+        }
+
+        async function scanFaces(token) {
+            while (faceState.scanning) await sleep(50);
+            if (!faceState.active || token !== faceState.token) return;
+            faceState.scanning = true;
+            let sinceRefresh = 0;
+            try {
+                while (faceState.active && token === faceState.token) {
+                    const ids = [...document.querySelectorAll('.photo-item')]
+                        .map(e => e.getAttribute('data-id'))
+                        .filter(id => !faceDescs.has(id) && !faceFailed.has(id));
+                    if (!ids.length) break;
+                    for (const id of ids) {
+                        if (!faceState.active || token !== faceState.token) break;
+                        try { faceDescs.set(id, await getFaceDescriptors(id)); }
+                        catch (e) { faceFailed.add(id); }
+                        if (token !== faceState.token) break;
+                        const hit = photoMatchesFace(id);
+                        if (hit) faceState.matches.add(id);
+                        if (hit || ++sinceRefresh >= 5) { sinceRefresh = 0; applyFilter(); }
+                        else updateSearchStatus();
+                        await sleep(20);
+                    }
+                }
+            } finally {
+                faceState.scanning = false;
+                if (faceState.active && token === faceState.token) applyFilter();
+            }
+        }
+
+        // เรียกจาก fetchPhotos เมื่อมีรูปใหม่เข้ามา
+        function faceOnNewPhotos() {
+            if (faceState.active && !faceState.scanning) scanFaces(faceState.token);
+        }
+
+        function toggleWideFace() {
+            if (!faceState.active) return;
+            faceState.wide = !faceState.wide;
+            recomputeFaceMatches();
+            refreshFacePane();
+            applyFilter();
+            scrollGalleryToStart();
+        }
+
+        function clearFaceSearch() {
+            faceState.token++;
+            faceState.active = false;
+            faceState.matches = null;
+            faceState.selfie = null;
+            faceState.wide = false;
+            setFaceMsg('');
+            refreshFacePane();
+            applyFilter();
+        }
+
+        function refreshFacePane() {
+            const box = document.getElementById('faceActive');
+            if (box) box.classList.toggle('is-off', !faceState.active);
+            const btn = document.getElementById('btnWide');
+            if (btn) btn.textContent = faceState.wide ? 'กลับไปค้นแบบเข้มงวด' : 'ลองค้นแบบกว้างขึ้น';
+        }
+
+        // --- แถบสถานะใต้หัวเว็บ + หน้าต่างค้นหา ---
+        function updateSearchStatus(visible) {
+            const el = document.getElementById('searchStatus');
+            const hint = document.querySelector('.scroll-hint');
+            if (!el || !hint) return;
+            const parts = [];
+            if (searchQuery) parts.push(`🔎 เลข ${searchQuery.replace(/</g, '')}`);
+            if (faceState.matches) {
+                const p = faceProgress();
+                parts.push(faceState.scanning && p.done < p.total ? `🙂 กำลังสแกน ${p.done}/${p.total}` : '🙂 รูปที่น่าจะเป็นคุณ');
+            }
+            if (!parts.length) { el.style.display = 'none'; hint.style.display = ''; return; }
+            const n = (typeof visible === 'number') ? visible : document.querySelectorAll('.photo-item:not(.hidden)').length;
+            hint.style.display = 'none';
+            el.style.display = 'block';
+            el.innerHTML = `${parts.join(' · ')} · พบ ${n} รูป <button class="status-clear" onclick="clearAllSearch()">✕ ล้าง</button>`;
+        }
+
+        function clearAllSearch() {
+            searchQuery = '';
+            const input = document.getElementById('noInput');
+            if (input) input.value = '';
+            faceState.token++;
+            faceState.active = false;
+            faceState.matches = null;
+            faceState.selfie = null;
+            faceState.wide = false;
+            setFaceMsg('');
+            refreshFacePane();
+            applyFilter();
+        }
+
+        function switchSearchTab(tab) {
+            document.getElementById('tabNo').classList.toggle('active', tab === 'no');
+            document.getElementById('tabFace').classList.toggle('active', tab === 'face');
+            document.getElementById('paneNo').classList.toggle('is-off', tab !== 'no');
+            document.getElementById('paneFace').classList.toggle('is-off', tab !== 'face');
+            if (tab === 'no') setTimeout(() => { const i = document.getElementById('noInput'); if (i) i.focus(); }, 60);
+            if (tab === 'face') refreshFacePane();
+        }
+
+        function openSearchSheet(tab) {
+            document.getElementById('searchSheet').classList.add('open');
+            switchSearchTab(tab || 'no');
+        }
+
+        function closeSearchSheet() {
+            document.getElementById('searchSheet').classList.remove('open');
+            const i = document.getElementById('noInput');
+            if (i) i.blur();
         }
 
         function formatTime(isoString) {
@@ -1369,6 +1894,7 @@
                 }
                 
                 applyFilter();
+                faceOnNewPhotos();
             } catch (err) { console.error(err); }
         }
 
