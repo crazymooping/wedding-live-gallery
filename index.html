@@ -974,7 +974,8 @@
                     <button class="sheet-btn" id="btnWide" onclick="toggleWideFace()">ลองค้นแบบกว้างขึ้น</button>
                     <button class="sheet-btn" onclick="clearFaceSearch()">ล้างผล</button>
                 </div>
-                <p class="sheet-note">🔒 รูปเซลฟี่ถูกประมวลผลในเครื่องของคุณเท่านั้น ไม่ถูกอัปโหลดไปที่ไหน<br>ครั้งแรกต้องโหลดข้อมูลสแกนใบหน้าราว 7MB (แนะนำใช้ Wi-Fi หรือ 5G) และสแกนรูปทั้งหมดอาจใช้เวลาสักครู่ ผลลัพธ์อาจไม่แม่นยำ 100%</p>
+                <div class="sheet-note" id="faceStats"></div>
+                <p class="sheet-note" id="faceNote">🔒 รูปเซลฟี่ถูกประมวลผลในเครื่องของคุณเท่านั้น ไม่ถูกอัปโหลดไปที่ไหน<br>ครั้งแรกต้องโหลดข้อมูลสแกนใบหน้าราว 12MB (แนะนำใช้ Wi-Fi หรือ 5G) ผลลัพธ์อาจไม่แม่นยำ 100%</p>
             </div>
         </div>
     </div>
@@ -1458,11 +1459,19 @@
               models: 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/' }
         ];
         const FACE_SCAN_SIZE = 640;      // ขนาดรูปที่ใช้สแกน (px) ใหญ่ขึ้น = เจอหน้าเล็กได้ดีขึ้น แต่โหลดมากขึ้น
-        const FACE_DETECT_INPUT = 512;
-        const FACE_CACHE_VER = 'v1-tiny512-s640';
+        const FACE_CACHE_VER = 'v2-s640';
+        const FACE_NEAREST_MAX = 0.8;    // ไม่เจอที่ตรงชัด: แสดงรูปที่ใกล้เคียงที่สุด (ระยะห่างไม่เกินค่านี้)
+        let faceDetector = 'tiny';      // เปลี่ยนเป็น 'ssd' อัตโนมัติถ้าโหลดโมเดล SSD ได้ (แม่นกว่าสำหรับหน้าเล็ก/หน้าชิดขอบ)
         const FACE_THRESHOLD = { normal: 0.5, wide: 0.6 };
 
-        const faceState = { active: false, scanning: false, token: 0, selfie: null, wide: false, matches: null };
+        const faceState = { active: false, scanning: false, token: 0, selfie: null, wide: false, matches: null, nearest: false, mode: 'browser' };
+        // โหมด 'index' = ใช้ดัชนีใบหน้า faces.json ที่ช่างภาพสแกนไว้ล่วงหน้าบน Mac (แม่นและเร็ว), 'browser' = สแกนเองในมือถือ (สำรอง)
+        let facesMeta = null;            // { id, modifiedTime } ของ faces.json ใน Drive (ถ้ามี)
+        let faceIndexStamp = '';         // modifiedTime ของดัชนีที่โหลดมาล่าสุด
+        let faceIndexFetchedAt = 0;
+        let faceIndexLoading = false;
+        const FACE_INDEX_MIN_INTERVAL = 30000;   // โหลดดัชนีซ้ำไม่ถี่กว่านี้ (ms)
+
         const faceDescs = new Map();     // id -> Float32Array[] (ใบหน้าทั้งหมดในรูป)
         const faceFailed = new Set();
         let faceEnginePromise = null;
@@ -1534,6 +1543,10 @@
                             faceapi.nets.faceLandmark68Net.loadFromUri(src.models),
                             faceapi.nets.faceRecognitionNet.loadFromUri(src.models)
                         ]);
+                        try {   // ตัวตรวจจับแบบแม่นกว่า (~5MB) ถ้าโหลดไม่ได้ก็ใช้ตัวเล็กต่อ
+                            await faceapi.nets.ssdMobilenetv1.loadFromUri(src.models);
+                            faceDetector = 'ssd';
+                        } catch (e) { console.warn('SSD detector not available, using tiny', e); faceDetector = 'tiny'; }
                         return true;
                     } catch (e) {
                         lastErr = e;
@@ -1555,12 +1568,14 @@
             });
         }
 
-        async function fileToCanvas(file, maxSide) {
+        async function fileToCanvas(file, maxSide, minSide) {
             const url = URL.createObjectURL(file);
             try {
                 const img = await loadFaceImage(url, false);
                 const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-                const scale = Math.min(1, maxSide / Math.max(w, h));
+                const longSide = Math.max(w, h);
+                // ใหญ่เกินย่อลง เล็กเกิน (เช่น รูปครอปหน้า) ขยายขึ้นให้ตัวตรวจจับเห็นชัดขึ้น
+                const scale = longSide < minSide ? (minSide / longSide) : Math.min(1, maxSide / longSide);
                 const c = document.createElement('canvas');
                 c.width = Math.max(1, Math.round(w * scale));
                 c.height = Math.max(1, Math.round(h * scale));
@@ -1575,32 +1590,53 @@
             return Math.sqrt(sum);
         }
 
-        async function detectDescriptors(input, scoreThreshold) {
-            const results = await faceapi
-                .detectAllFaces(input, new faceapi.TinyFaceDetectorOptions({ inputSize: FACE_DETECT_INPUT, scoreThreshold }))
+        function faceDetectorOptions(forSelfie) {
+            if (faceDetector === 'ssd') return new faceapi.SsdMobilenetv1Options({ minConfidence: forSelfie ? 0.5 : 0.4 });
+            return new faceapi.TinyFaceDetectorOptions({ inputSize: forSelfie ? 512 : 608, scoreThreshold: forSelfie ? 0.4 : 0.35 });
+        }
+
+        async function detectDescriptors(input, forSelfie) {
+            return await faceapi
+                .detectAllFaces(input, faceDetectorOptions(forSelfie))
                 .withFaceLandmarks()
                 .withFaceDescriptors();
-            return results;
+        }
+
+        // เติมขอบเทารอบรูป: รูปที่ครอปมาแต่หน้าเต็มกรอบ ตัวตรวจจับมักหาไม่เจอถ้าไม่มีพื้นที่รอบหน้า
+        function padCanvas(src, ratio) {
+            const pad = Math.round(Math.max(src.width, src.height) * ratio);
+            const c = document.createElement('canvas');
+            c.width = src.width + pad * 2;
+            c.height = src.height + pad * 2;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#808080';
+            ctx.fillRect(0, 0, c.width, c.height);
+            ctx.drawImage(src, pad, pad);
+            return c;
         }
 
         async function getSelfieDescriptor(file) {
-            const canvas = await fileToCanvas(file, 800);
-            const results = await detectDescriptors(canvas, 0.5);
-            if (!results.length) throw faceError('NO_FACE');
-            let best = results[0];
-            for (const r of results) {
-                const a = r.detection.box, b = best.detection.box;
-                if (a.width * a.height > b.width * b.height) best = r;
+            const base = await fileToCanvas(file, 800, 400);
+            const attempts = [base, padCanvas(base, 0.35), padCanvas(base, 0.8)];
+            for (const canvas of attempts) {
+                const results = await detectDescriptors(canvas, true);
+                if (!results.length) continue;
+                let best = results[0];
+                for (const r of results) {
+                    const a = r.detection.box, b = best.detection.box;
+                    if (a.width * a.height > b.width * b.height) best = r;
+                }
+                return { descriptor: Float32Array.from(best.descriptor), count: results.length };
             }
-            return { descriptor: Float32Array.from(best.descriptor), count: results.length };
+            throw faceError('NO_FACE');
         }
 
         async function getFaceDescriptors(id) {
-            const key = FACE_CACHE_VER + ':' + id;
+            const key = FACE_CACHE_VER + ':' + faceDetector + ':' + id;
             const cached = await faceCacheGet(key);
             if (cached) return cached.map(a => Float32Array.from(a));
             const img = await loadFaceImage(`https://lh3.googleusercontent.com/d/${id}=s${FACE_SCAN_SIZE}`, true);
-            const results = await detectDescriptors(img, 0.4);
+            const results = await detectDescriptors(img, false);
             const descs = results.map(r => Array.from(r.descriptor));
             img.src = '';
             await faceCachePut(key, descs);
@@ -1621,6 +1657,45 @@
             const m = new Set();
             for (const id of faceDescs.keys()) if (photoMatchesFace(id)) m.add(id);
             faceState.matches = m;
+            faceState.nearest = false;
+        }
+
+        // ไม่มีรูปที่ตรงชัดเลย: แสดง 5 รูปที่ใกล้เคียงที่สุดแทน (ติดป้ายว่าอาจไม่ใช่) แทนที่จะปล่อยว่าง
+        function applyNearestIfEmpty() {
+            if (!faceState.active || !faceState.matches || faceState.matches.size > 0 || !faceState.selfie) return;
+            const arr = [];
+            for (const [id, descs] of faceDescs) {
+                let best = Infinity;
+                for (const d of descs) best = Math.min(best, faceDistance(d, faceState.selfie));
+                if (isFinite(best) && best <= FACE_NEAREST_MAX) arr.push([best, id]);
+            }
+            arr.sort((a, b) => a[0] - b[0]);
+            if (arr.length) {
+                faceState.matches = new Set(arr.slice(0, 5).map(x => x[1]));
+                faceState.nearest = true;
+            }
+        }
+
+        function faceStats() {
+            let faces = 0, photosWithFaces = 0, best = Infinity;
+            for (const descs of faceDescs.values()) {
+                faces += descs.length;
+                if (descs.length) photosWithFaces++;
+                if (faceState.selfie) for (const d of descs) best = Math.min(best, faceDistance(d, faceState.selfie));
+            }
+            const p = faceProgress();
+            return { scanned: p.done, total: p.total, failed: faceFailed.size, faces, photosWithFaces, best };
+        }
+
+        function refreshFaceStats() {
+            const el = document.getElementById('faceStats');
+            if (!el) return;
+            if (!faceState.active) { el.textContent = ''; return; }
+            const st = faceStats();
+            el.textContent = `รายละเอียด: สแกน ${st.scanned}/${st.total} รูป · พบใบหน้า ${st.faces} ใบ (ใน ${st.photosWithFaces} รูป)` +
+                (st.failed ? ` · โหลดไม่สำเร็จ ${st.failed} รูป` : '') +
+                (isFinite(st.best) ? ` · ใกล้เคียงสุด ${st.best.toFixed(2)} (เกณฑ์ ${faceThreshold().toFixed(2)})` : '') +
+                (faceState.mode === 'index' ? ' · ใช้ดัชนีจากช่างภาพ' : ` · สแกนในเครื่อง (${faceDetector})`);
         }
 
         function faceProgress() {
@@ -1632,6 +1707,40 @@
         function setFaceMsg(text) {
             const el = document.getElementById('faceMsg');
             if (el) el.textContent = text || '';
+        }
+
+        // --- โหมดดัชนี: อ่านลายนิ้วมือใบหน้าที่ Mac สแกนไว้ ---
+        function setFacesMeta(meta) {
+            facesMeta = meta || null;
+        }
+
+        async function syncFaceIndex(force) {
+            if (!facesMeta || faceIndexLoading) return false;
+            if (!force && (facesMeta.modifiedTime === faceIndexStamp || Date.now() - faceIndexFetchedAt < FACE_INDEX_MIN_INTERVAL)) return false;
+            faceIndexLoading = true;
+            try {
+                const res = await fetch(driveMediaUrl(facesMeta.id), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data || data.v !== 1 || !data.entries) throw new Error('bad index format');
+                for (const [id, arr] of Object.entries(data.entries)) {
+                    faceDescs.set(id, arr.map(a => Float32Array.from(a)));
+                }
+                faceIndexStamp = facesMeta.modifiedTime;
+                faceIndexFetchedAt = Date.now();
+                if (faceState.active && faceState.mode === 'index') {
+                    recomputeFaceMatches();
+                    const p = faceProgress();
+                    if (p.done >= p.total) applyNearestIfEmpty();
+                    applyFilter();
+                }
+                return true;
+            } catch (e) {
+                console.warn('face index load failed', e);
+                return false;
+            } finally {
+                faceIndexLoading = false;
+            }
         }
 
         function onSelfiePicked(input) {
@@ -1655,14 +1764,25 @@
                 if (myToken !== faceState.token) return;
                 faceState.selfie = r.descriptor;
                 faceState.wide = false;
+                faceDescs.clear();
+                faceFailed.clear();
+                faceIndexStamp = '';
+                // มีดัชนีจากช่างภาพ (faces.json) -> ใช้ดัชนี; ไม่มี -> สแกนเองในมือถือ
+                faceState.mode = (facesMeta && await syncFaceIndex(true)) ? 'index' : 'browser';
+                if (myToken !== faceState.token) return;
                 faceState.active = true;
                 recomputeFaceMatches();
                 setFaceMsg(r.count > 1 ? 'พบหลายใบหน้าในรูป ใช้ใบหน้าที่ใหญ่ที่สุด' : '');
                 refreshFacePane();
                 closeSearchSheet();
+                if (faceState.mode === 'index') {
+                    const p = faceProgress();
+                    if (p.done >= p.total) applyNearestIfEmpty();
+                } else {
+                    scanFaces(myToken);
+                }
                 applyFilter();
                 scrollGalleryToStart();
-                scanFaces(myToken);
             } catch (e) {
                 console.error(e);
                 if (myToken !== faceState.token) return;
@@ -1676,6 +1796,7 @@
             while (faceState.scanning) await sleep(50);
             if (!faceState.active || token !== faceState.token) return;
             faceState.scanning = true;
+            recomputeFaceMatches();   // เริ่มรอบสแกนใหม่: ล้างผล "ใกล้เคียงที่สุด" เดิม
             let sinceRefresh = 0;
             try {
                 while (faceState.active && token === faceState.token) {
@@ -1697,19 +1818,22 @@
                 }
             } finally {
                 faceState.scanning = false;
-                if (faceState.active && token === faceState.token) applyFilter();
+                if (faceState.active && token === faceState.token) { applyNearestIfEmpty(); applyFilter(); }
             }
         }
 
         // เรียกจาก fetchPhotos เมื่อมีรูปใหม่เข้ามา
         function faceOnNewPhotos() {
-            if (faceState.active && !faceState.scanning) scanFaces(faceState.token);
+            if (!faceState.active) return;
+            if (faceState.mode === 'index') { syncFaceIndex(false); return; }
+            if (!faceState.scanning) scanFaces(faceState.token);
         }
 
         function toggleWideFace() {
             if (!faceState.active) return;
             faceState.wide = !faceState.wide;
             recomputeFaceMatches();
+            if (!faceState.scanning) applyNearestIfEmpty();
             refreshFacePane();
             applyFilter();
             scrollGalleryToStart();
@@ -1721,6 +1845,7 @@
             faceState.matches = null;
             faceState.selfie = null;
             faceState.wide = false;
+            faceState.mode = 'browser';
             setFaceMsg('');
             refreshFacePane();
             applyFilter();
@@ -1731,6 +1856,7 @@
             if (box) box.classList.toggle('is-off', !faceState.active);
             const btn = document.getElementById('btnWide');
             if (btn) btn.textContent = faceState.wide ? 'กลับไปค้นแบบเข้มงวด' : 'ลองค้นแบบกว้างขึ้น';
+            refreshFaceStats();
         }
 
         // --- แถบสถานะใต้หัวเว็บ + หน้าต่างค้นหา ---
@@ -1738,17 +1864,22 @@
             const el = document.getElementById('searchStatus');
             const hint = document.querySelector('.scroll-hint');
             if (!el || !hint) return;
+            refreshFaceStats();
             const parts = [];
             if (searchQuery) parts.push(`🔎 เลข ${searchQuery.replace(/</g, '')}`);
             if (faceState.matches) {
                 const p = faceProgress();
-                parts.push(faceState.scanning && p.done < p.total ? `🙂 กำลังสแกน ${p.done}/${p.total}` : '🙂 รูปที่น่าจะเป็นคุณ');
+                if (faceState.mode === 'index' && p.done < p.total) parts.push(`🙂 ประมวลผลรูปแล้ว ${p.done}/${p.total}`);
+                else if (faceState.scanning && p.done < p.total) parts.push(`🙂 กำลังสแกน ${p.done}/${p.total}`);
+                else if (faceState.nearest) parts.push('🙂 ไม่พบที่ตรงชัด แสดงรูปที่ใกล้เคียงที่สุด');
+                else parts.push('🙂 รูปที่น่าจะเป็นคุณ');
             }
             if (!parts.length) { el.style.display = 'none'; hint.style.display = ''; return; }
             const n = (typeof visible === 'number') ? visible : document.querySelectorAll('.photo-item:not(.hidden)').length;
             hint.style.display = 'none';
             el.style.display = 'block';
             el.innerHTML = `${parts.join(' · ')} · พบ ${n} รูป <button class="status-clear" onclick="clearAllSearch()">✕ ล้าง</button>`;
+            refreshFaceStats();
         }
 
         function clearAllSearch() {
@@ -1760,6 +1891,7 @@
             faceState.matches = null;
             faceState.selfie = null;
             faceState.wide = false;
+            faceState.mode = 'browser';
             setFaceMsg('');
             refreshFacePane();
             applyFilter();
@@ -1771,7 +1903,13 @@
             document.getElementById('paneNo').classList.toggle('is-off', tab !== 'no');
             document.getElementById('paneFace').classList.toggle('is-off', tab !== 'face');
             if (tab === 'no') setTimeout(() => { const i = document.getElementById('noInput'); if (i) i.focus(); }, 60);
-            if (tab === 'face') refreshFacePane();
+            if (tab === 'face') {
+                refreshFacePane();
+                const note = document.getElementById('faceNote');
+                if (note) note.innerHTML = facesMeta
+                    ? '🔒 รูปเซลฟี่ถูกประมวลผลในเครื่องของคุณเท่านั้น ไม่ถูกอัปโหลดไปที่ไหน<br>ครั้งแรกต้องโหลดข้อมูลสแกนใบหน้าราว 12MB (แนะนำใช้ Wi-Fi หรือ 5G) ส่วนรูปในงานช่างภาพสแกนไว้ให้แล้ว จึงค้นได้เร็ว ผลลัพธ์อาจไม่แม่นยำ 100%'
+                    : '🔒 รูปเซลฟี่ถูกประมวลผลในเครื่องของคุณเท่านั้น ไม่ถูกอัปโหลดไปที่ไหน<br>ครั้งแรกต้องโหลดข้อมูลสแกนใบหน้าราว 12MB (แนะนำใช้ Wi-Fi หรือ 5G) และสแกนรูปทั้งหมดอาจใช้เวลาสักครู่ ผลลัพธ์อาจไม่แม่นยำ 100%';
+            }
         }
 
         function openSearchSheet(tab) {
@@ -1816,7 +1954,7 @@
                 let fetchOk = true;
                 let pageToken = '';
                 do {
-                    const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+trashed=false&orderBy=createdTime+desc&pageSize=1000&fields=nextPageToken,files(id,name,createdTime)` +
+                    const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents+and+trashed=false&orderBy=createdTime+desc&pageSize=1000&fields=nextPageToken,files(id,name,createdTime,modifiedTime)` +
                         (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '') + `&key=${API_KEY}`;
                     const response = await fetch(url);
                     const page = await response.json();
@@ -1826,6 +1964,11 @@
                 } while (pageToken);
 
                 if (!fetchOk) return;
+
+                // faces.json = ดัชนีใบหน้าที่ช่างภาพ (Mac) สร้างไว้ ไม่ใช่รูป: แยกออกจากรายการรูป
+                const facesFile = allFiles.find(f => f.name === 'faces.json') || null;
+                allFiles = allFiles.filter(f => !/\.json$/i.test(f.name || ''));
+                setFacesMeta(facesFile);
 
                 const driveFileIds = new Set(allFiles.map(f => f.id));
                 pruneFavorites(driveFileIds);
