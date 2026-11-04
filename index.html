@@ -2160,8 +2160,17 @@
 
             const urlParams = new URLSearchParams(window.location.search);
             const paramEvent = urlParams.get('event');
+            const paramFolder = urlParams.get('f');   // ลิงก์แบบไม่ต้องแก้ไฟล์นี้: ?f=<Drive folder ID>&t=<ชื่องาน>&d=<วันที่>
 
-            if (paramEvent && EVENTS_CONFIG[paramEvent]) {
+            if (paramFolder && /^[A-Za-z0-9_-]{20,}$/.test(paramFolder)) {
+                const key = 'f_' + paramFolder;
+                EVENTS_CONFIG[key] = {
+                    title: (urlParams.get('t') || 'Live Gallery').slice(0, 80),
+                    date: (urlParams.get('d') || '').slice(0, 40),
+                    folderId: paramFolder
+                };
+                selectEvent(key);
+            } else if (paramEvent && EVENTS_CONFIG[paramEvent]) {
                 selectEvent(paramEvent);
             } else {
                 openPortalModal();
