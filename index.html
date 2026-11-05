@@ -343,6 +343,9 @@
             pointer-events: none;
         }
 
+        .load-error { max-width: 86%; line-height: 1.7; color: #8A3A2E; }
+        .load-error small { display: block; color: var(--text-muted); margin-top: 4px; }
+
         footer {
             flex-shrink: 0;
             text-align: center;
@@ -909,6 +912,7 @@
     <div class="gallery-container">
         <div class="gallery-grid" id="gallery"></div>
         <div class="empty-state" id="emptyState">คุณยังไม่ได้กดใจรูปภาพใดๆ 🤍</div>
+        <div class="empty-state load-error" id="loadError"></div>
     </div>
 
     <footer>
@@ -989,8 +993,8 @@
                 folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK',
             },'jj-mooping': {
                 title: 'JJ & MOOPING',
-                date: '30 · 12 · 2026',
-                folderId: '1135Jz2mCnylExYxZo6PJwKJZYyXLiqUug',
+                date: '31 · 12 · 2026',
+                folderId: '12dJgrFnKC44Y5iHnH-NH_zkyM9TgLqlK',
             }
         };
 
@@ -1962,12 +1966,13 @@
                         (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '') + `&key=${API_KEY}`;
                     const response = await fetch(url);
                     const page = await response.json();
-                    if (page.error) { console.error('Drive API error:', page.error); fetchOk = false; break; }
+                    if (page.error) { console.error('Drive API error:', page.error); fetchOk = false; showLoadError(page.error); break; }
                     allFiles = allFiles.concat(page.files || []);
                     pageToken = page.nextPageToken || '';
                 } while (pageToken);
 
                 if (!fetchOk) return;
+                clearLoadError();
 
                 // faces.json = ดัชนีใบหน้าที่ช่างภาพ (Mac) สร้างไว้ ไม่ใช่รูป: แยกออกจากรายการรูป
                 const facesFile = allFiles.find(f => f.name === 'faces.json') || null;
@@ -2043,6 +2048,22 @@
                 applyFilter();
                 faceOnNewPhotos();
             } catch (err) { console.error(err); }
+        }
+
+        // ถ้าอ่านโฟลเดอร์ Drive ไม่ได้ ให้บอกสาเหตุบนหน้าเว็บ (เดิมขึ้นว่างเปล่าเฉยๆ) — แสดงเฉพาะตอนยังไม่มีรูปบนหน้าจอ
+        function showLoadError(err) {
+            const el = document.getElementById('loadError');
+            if (!el || document.querySelectorAll('.photo-item').length > 0) return;
+            const code = (err && err.code) || '';
+            let msg = 'ยังโหลดรูปไม่ได้ ลองรีเฟรชอีกครั้ง หรือแจ้งผู้จัดงาน';
+            if (code === 404) msg = 'ไม่พบโฟลเดอร์รูป หรือโฟลเดอร์ยังไม่ได้แชร์<br>(ผู้จัดงาน: ตั้งแชร์โฟลเดอร์ Drive เป็น “Anyone with the link: Viewer” และตรวจ folder ID)';
+            else if (code === 403) msg = 'ไม่มีสิทธิ์อ่านโฟลเดอร์รูป<br>(ผู้จัดงาน: ตรวจการแชร์โฟลเดอร์ และการจำกัดโดเมนของ API key)';
+            el.innerHTML = msg + (code ? '<small>รหัสข้อผิดพลาด ' + code + '</small>' : '');
+            el.style.display = 'block';
+        }
+        function clearLoadError() {
+            const el = document.getElementById('loadError');
+            if (el) el.style.display = 'none';
         }
 
         function openModal(fastPreviewUrl, fullUrl, fileId) {
