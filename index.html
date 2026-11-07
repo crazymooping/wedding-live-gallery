@@ -343,6 +343,35 @@
             pointer-events: none;
         }
 
+        .closed-screen {
+            position: absolute; inset: 0;
+            flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px; gap: 6px;
+            color: var(--text-main); z-index: 5;
+        }
+        .closed-icon { font-size: 42px; }
+        .closed-title { font-family: 'Noto Serif Thai', serif; font-size: 18px; color: var(--champagne-gold); }
+        .closed-sub { font-size: 12px; color: var(--text-muted); letter-spacing: 1px; }
+        .owner-link {
+            margin-top: 22px; background: none; border: none; cursor: pointer;
+            font-size: 11px; color: var(--text-muted); text-decoration: underline; opacity: .7;
+            font-family: 'Noto Serif Thai', serif;
+        }
+        .owner-box { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; max-width: 86%; }
+        .owner-box input {
+            padding: 8px 12px; border: 1px solid var(--champagne-gold); border-radius: 14px;
+            background: #fff; font-size: 14px; width: 190px; font-family: inherit; outline: none;
+        }
+        .owner-box button {
+            padding: 8px 16px; border: none; border-radius: 14px; background: var(--champagne-gold);
+            color: #FAF7F2; font-size: 13px; cursor: pointer; font-family: 'Noto Serif Thai', serif;
+        }
+        .owner-msg { width: 100%; font-size: 12px; color: #8A3A2E; min-height: 16px; }
+        body.gallery-closed .filter-container,
+        body.gallery-closed .tool-row,
+        body.gallery-closed .scroll-hint,
+        body.gallery-closed .search-status { display: none !important; }
+
         .load-error { max-width: 86%; line-height: 1.7; color: #8A3A2E; }
         .load-error small { display: block; color: var(--text-muted); margin-top: 4px; }
 
@@ -911,6 +940,17 @@
 
     <div class="gallery-container">
         <div class="gallery-grid" id="gallery"></div>
+        <div class="closed-screen" id="closedScreen" style="display:none">
+            <div class="closed-icon">🔒</div>
+            <div class="closed-title">แกลเลอรีปิดอยู่ชั่วคราว</div>
+            <div class="closed-sub">The gallery is currently closed</div>
+            <button class="owner-link" id="ownerLink" type="button">เจ้าของงาน</button>
+            <div class="owner-box" id="ownerBox" style="display:none">
+                <input type="password" id="ownerPw" placeholder="รหัสผ่านเจ้าของงาน" autocomplete="off">
+                <button id="ownerGo" type="button">เข้าดู</button>
+                <div class="owner-msg" id="ownerMsg"></div>
+            </div>
+        </div>
         <div class="empty-state" id="emptyState">คุณยังไม่ได้กดใจรูปภาพใดๆ 🤍</div>
         <div class="empty-state load-error" id="loadError"></div>
     </div>
@@ -995,6 +1035,9 @@
         };
 
         const API_KEY = 'AIzaSyDO1Kf973lGe2_q6JoaXQvxQV9V25N16_A';
+        // ใส่ครั้งเดียว: ID โฟลเดอร์ Drive ที่โปรแกรมอัปโหลดใช้เก็บรายการงาน (events.json) — ดูบรรทัดสำเร็จรูปในหน้าต่างโปรแกรม (ปุ่ม "ตั้งค่า" ในการ์ดหน้าแรกของแกลเลอรี)
+        // ตั้งแล้ว: หน้าเลือกงานจะแสดงงานตามที่เพิ่ม/ลบ/ซ่อนในโปรแกรม โดยไม่ต้องอัปไฟล์นี้ขึ้น git อีก  ว่างไว้ = ใช้ EVENTS_CONFIG ด้านบนแบบเดิม
+        const INDEX_FOLDER_ID = '';
         let currentEventKey = '';
         let FOLDER_ID = '';
         let STORAGE_KEY = '';
@@ -1221,24 +1264,63 @@
             return cleanName;
         }
 
-        function renderPortalButtons() {
+        // อ่านรายการงานที่โปรแกรมอัปโหลดไว้ (events.json ในโฟลเดอร์ INDEX_FOLDER_ID) คืน null ถ้าไม่ได้ตั้งหรืออ่านไม่ได้
+        async function loadEventIndex() {
+            if (!INDEX_FOLDER_ID) return null;
+            try {
+                const q = `'${INDEX_FOLDER_ID}' in parents and name='events.json' and trashed=false`;
+                const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&pageSize=1&key=${API_KEY}`);
+                const j = await r.json();
+                const f = j.files && j.files[0];
+                if (!f) return null;
+                const m = await fetch(driveMediaUrl(f.id), { cache: 'no-store' });
+                const data = await m.json();
+                if (!data || data.v !== 1 || !Array.isArray(data.events)) return null;
+                return data.events
+                    .filter(e => /^[A-Za-z0-9_-]{20,}$/.test(String((e && e.folderId) || '')))
+                    .map(e => ({ title: String(e.title || '').slice(0, 80), date: String(e.date || '').slice(0, 40), folderId: e.folderId, open: e.open !== false }));
+            } catch (e) {
+                console.warn('event index load failed', e);
+                return null;
+            }
+        }
+
+        function addPortalButton(list, title, date, onClick) {
+            const btn = document.createElement('div');
+            btn.className = 'portal-event-btn';
+            const wrap = document.createElement('div'); wrap.className = 'portal-event-content';
+            const ic = document.createElement('div'); ic.className = 'portal-event-icon'; ic.textContent = '✦  LIVE GALLERY  ✦';
+            const t = document.createElement('div'); t.className = 'portal-event-title'; t.textContent = title;
+            const d = document.createElement('div'); d.className = 'portal-event-date'; d.textContent = date || '';
+            wrap.append(ic, t, d); btn.appendChild(wrap);
+            btn.onclick = onClick;
+            list.appendChild(btn);
+        }
+
+        async function renderPortalButtons() {
             const list = document.getElementById('eventButtonsList');
             list.innerHTML = '';
-            
+            const indexed = await loadEventIndex();
+            list.innerHTML = '';
+            if (indexed) {
+                // รายการจากโปรแกรม (เพิ่ม/ลบ/ซ่อนได้โดยไม่ต้องอัปไฟล์นี้)
+                if (indexed.length === 0) {
+                    const p = document.createElement('div');
+                    p.style.cssText = 'padding:18px 10px;color:var(--text-muted);font-size:13px;text-align:center';
+                    p.textContent = 'ยังไม่มีงานที่เปิดให้ชมในขณะนี้';
+                    list.appendChild(p);
+                }
+                indexed.forEach(ev => addPortalButton(list, (ev.open ? '' : '🔒 ') + ev.title, ev.date, () => {
+                    const key = 'f_' + ev.folderId;
+                    EVENTS_CONFIG[key] = { title: ev.title, date: ev.date, folderId: ev.folderId };
+                    selectEvent(key);
+                }));
+                return;
+            }
+            // สำรอง: รายการที่เขียนไว้ใน EVENTS_CONFIG (แบบเดิม)
             Object.keys(EVENTS_CONFIG).forEach(key => {
                 const ev = EVENTS_CONFIG[key];
-                const btn = document.createElement('div');
-                btn.className = 'portal-event-btn';
-
-                btn.innerHTML = `
-                    <div class="portal-event-content">
-                        <div class="portal-event-icon">✦  LIVE GALLERY  ✦</div>
-                        <div class="portal-event-title">${ev.title}</div>
-                        <div class="portal-event-date">${ev.date}</div>
-                    </div>
-                `;
-                btn.onclick = () => selectEvent(key);
-                list.appendChild(btn);
+                addPortalButton(list, ev.title, ev.date, () => selectEvent(key));
             });
         }
 
@@ -1972,8 +2054,14 @@
 
                 // faces.json = ดัชนีใบหน้าที่ช่างภาพ (Mac) สร้างไว้ ไม่ใช่รูป: แยกออกจากรายการรูป
                 const facesFile = allFiles.find(f => f.name === 'faces.json') || null;
+                const gateFile = allFiles.find(f => f.name === 'gallery.json') || null;
                 allFiles = allFiles.filter(f => !/\.json$/i.test(f.name || ''));
                 setFacesMeta(facesFile);
+
+                // แกลเลอรีปิดอยู่ (และไม่ใช่เจ้าของงานที่ใส่รหัสผ่านแล้ว): ไม่แสดงรูปใดๆ
+                await loadGate(gateFile);
+                if (isGateBlocked()) { enforceClosed(); return; }
+                releaseClosed();
 
                 const driveFileIds = new Set(allFiles.map(f => f.id));
                 pruneFavorites(driveFileIds);
@@ -2045,6 +2133,86 @@
                 faceOnNewPhotos();
             } catch (err) { console.error(err); }
         }
+
+        /* ===== เปิด/ปิดแกลเลอรี (gallery.json ที่โปรแกรมอัปโหลดไว้ในโฟลเดอร์งาน) =====
+           หมายเหตุ: เป็นการซ่อนในหน้าเว็บนี้ ไม่ใช่การล็อกจริงของ Drive (โฟลเดอร์ยังแชร์ลิงก์อยู่) */
+        let gateState = null;      // { open, salt, hash, iter } หรือ null = ไม่มีระบบปิด/เปิด (เปิดตามปกติ)
+        let gateStamp = '';
+        let ownerFails = 0, ownerLockUntil = 0;
+        const gateKey = () => 'gate_ok_' + FOLDER_ID;
+
+        async function loadGate(meta) {
+            if (!meta) { gateState = null; gateStamp = ''; return; }
+            if (gateState && meta.modifiedTime === gateStamp) return;
+            try {
+                const res = await fetch(driveMediaUrl(meta.id), { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const g = await res.json();
+                if (!g || g.v !== 1) throw new Error('bad gate file');
+                gateState = { open: g.open !== false, salt: String(g.salt || ''), hash: String(g.hash || ''), iter: Number(g.iter) || 0 };
+                gateStamp = meta.modifiedTime;
+            } catch (e) {
+                console.warn('gate load failed', e);
+                // ยังไม่เคยรู้สถานะ: ปิดไว้ก่อนเพื่อความปลอดภัย แล้วลองใหม่รอบถัดไป
+                if (!gateState) gateState = { open: false, salt: '', hash: '', iter: 0 };
+            }
+        }
+        function isOwnerUnlocked() {
+            try { return !!gateState && !!gateState.hash && sessionStorage.getItem(gateKey()) === gateState.hash; } catch (e) { return false; }
+        }
+        function isGateBlocked() { return !!gateState && gateState.open === false && !isOwnerUnlocked(); }
+
+        function enforceClosed() {
+            document.body.classList.add('gallery-closed');
+            document.getElementById('closedScreen').style.display = 'flex';
+            // เอารูปที่โหลดค้างอยู่ออกทั้งหมด
+            document.querySelectorAll('.photo-item').forEach(el => el.remove());
+            imageCache.clear(); fileCache.clear(); readyFiles.clear(); selectedIds = [];
+            const modal = document.getElementById('photoModal');
+            if (modal) modal.classList.remove('active');
+            if (typeof clearAllSearch === 'function' && (searchQuery || faceState.matches)) clearAllSearch();
+            const le = document.getElementById('loadError'); if (le) le.style.display = 'none';
+            const es = document.getElementById('emptyState'); if (es) es.style.display = 'none';
+        }
+        function releaseClosed() {
+            document.body.classList.remove('gallery-closed');
+            document.getElementById('closedScreen').style.display = 'none';
+        }
+
+        async function pbkdf2Hex(password, salt, iterations) {
+            const enc = new TextEncoder();
+            const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+            const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(salt), iterations }, key, 256);
+            return [...new Uint8Array(bits)].map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        async function tryOwnerUnlock() {
+            const msg = document.getElementById('ownerMsg'), input = document.getElementById('ownerPw');
+            if (Date.now() < ownerLockUntil) { msg.textContent = 'ลองผิดหลายครั้ง รอสักครู่แล้วลองใหม่'; return; }
+            if (!gateState || !gateState.hash || !(window.crypto && crypto.subtle)) {
+                msg.textContent = 'ตรวจรหัสผ่านไม่ได้ (ผู้จัดงานยังไม่ได้ตั้งรหัสผ่าน หรือเปิดหน้านี้ไม่ใช่แบบ https)'; return;
+            }
+            msg.textContent = '';
+            let ok = false;
+            try { ok = (await pbkdf2Hex(input.value, gateState.salt, gateState.iter)) === gateState.hash; } catch (e) { ok = false; }
+            input.value = '';
+            if (ok) {
+                try { sessionStorage.setItem(gateKey(), gateState.hash); } catch (e) {}
+                ownerFails = 0; msg.textContent = '';
+                document.getElementById('ownerBox').style.display = 'none';
+                fetchPhotos();
+            } else {
+                ownerFails++;
+                msg.textContent = 'รหัสผ่านไม่ถูกต้อง';
+                if (ownerFails >= 3) { ownerLockUntil = Date.now() + 8000 * ownerFails; msg.textContent = 'รหัสผ่านไม่ถูกต้อง — รอสักครู่ก่อนลองใหม่'; }
+            }
+        }
+        document.getElementById('ownerLink').onclick = () => {
+            const box = document.getElementById('ownerBox');
+            box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+            if (box.style.display === 'flex') document.getElementById('ownerPw').focus();
+        };
+        document.getElementById('ownerGo').onclick = tryOwnerUnlock;
+        document.getElementById('ownerPw').addEventListener('keydown', e => { if (e.key === 'Enter') tryOwnerUnlock(); });
 
         // ถ้าอ่านโฟลเดอร์ Drive ไม่ได้ ให้บอกสาเหตุบนหน้าเว็บ (เดิมขึ้นว่างเปล่าเฉยๆ) — แสดงเฉพาะตอนยังไม่มีรูปบนหน้าจอ
         function showLoadError(err) {
