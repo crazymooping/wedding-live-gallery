@@ -2060,6 +2060,7 @@
 
                 // แกลเลอรีปิดอยู่ (และไม่ใช่เจ้าของงานที่ใส่รหัสผ่านแล้ว): ไม่แสดงรูปใดๆ
                 await loadGate(gateFile);
+                applyEventMeta();
                 if (isGateBlocked()) { enforceClosed(); return; }
                 releaseClosed();
 
@@ -2149,13 +2150,30 @@
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const g = await res.json();
                 if (!g || g.v !== 1) throw new Error('bad gate file');
-                gateState = { open: g.open !== false, salt: String(g.salt || ''), hash: String(g.hash || ''), iter: Number(g.iter) || 0 };
+                gateState = { open: g.open !== false, salt: String(g.salt || ''), hash: String(g.hash || ''), iter: Number(g.iter) || 0,
+                              title: g.title ? String(g.title).slice(0, 80) : '', date: (g.date !== undefined && g.date !== null) ? String(g.date).slice(0, 40) : null };
                 gateStamp = meta.modifiedTime;
+                if (g.title) applyEventMeta(String(g.title).slice(0, 80), g.date != null ? String(g.date).slice(0, 40) : undefined);
             } catch (e) {
                 console.warn('gate load failed', e);
                 // ยังไม่เคยรู้สถานะ: ปิดไว้ก่อนเพื่อความปลอดภัย แล้วลองใหม่รอบถัดไป
                 if (!gateState) gateState = { open: false, salt: '', hash: '', iter: 0 };
             }
+        }
+        // ชื่อ/วันที่งานที่แก้ใน Google Sheet (หรือในโปรแกรม) จะถูกส่งมากับ gallery.json แล้วเปลี่ยนบนหน้าเว็บทันที แม้ใช้ลิงก์เก่า/QR เดิม
+        function applyEventMeta(title, date) {
+            const ev = EVENTS_CONFIG[currentEventKey];
+            if (ev) { ev.title = title; if (date !== undefined) ev.date = date; }
+            document.getElementById('coupleTitle').textContent = title;
+            if (date !== undefined) document.getElementById('eventDate').textContent = date;
+            document.title = `${title} — Live Gallery`;
+        }
+        // ชื่อ/วันที่งานจากโปรแกรม (แก้ในโปรแกรมหรือใน Google Sheet แล้วหน้าเว็บเปลี่ยนตาม แม้ลิงก์ที่แจกไปจะเป็นลิงก์เดิม)
+        function applyEventMeta() {
+            if (!gateState) return;
+            const t = document.getElementById('coupleTitle'), d = document.getElementById('eventDate');
+            if (gateState.title && t) { t.textContent = gateState.title; document.title = gateState.title + ' — Live Gallery'; }
+            if (gateState.date !== null && gateState.date !== undefined && d) d.textContent = gateState.date;
         }
         function isOwnerUnlocked() {
             try { return !!gateState && !!gateState.hash && sessionStorage.getItem(gateKey()) === gateState.hash; } catch (e) { return false; }
